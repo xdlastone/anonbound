@@ -1,6 +1,8 @@
 -- === ЗАЩИТА ОТ ПОВТОРНОГО ЗАПУСКА (SINGLETON) ===
 local env = (getgenv and getgenv()) or _G
 
+local TARGET_SCRIPT_URL = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/MainGui"
+
 if env._FATALITY_HAS_LOADED_SESSION_ then
 	warn("[Fatality]: Скрипт уже был запущен. Повторный запуск запрещен.")
 	return 
@@ -160,7 +162,7 @@ createFatalityGradient(textNonbound) -- Применяем ТОТ ЖЕ град�
 
 local function RunPayload()
 	print(">>> ANONBOUND LOADED <<<")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/MainGui"))()
+loadstring(game:HttpGet(TARGET_SCRIPT_URL))()
 end
 
 task.spawn(function()
