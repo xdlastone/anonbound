@@ -95,7 +95,8 @@ local function createInterface()
 	closeBtn.MouseEnter:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_ACCENT}):Play() end)
 	closeBtn.MouseLeave:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play() end)
 	
-	closeBtn.MouseButton1Click:Connect(function()
+	-- Функция закрытия (вынес отдельно, чтобы вызывать и из кнопки, и из скрипта)
+	local function closeUI()
 		local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 		local fadeTween = TweenService:Create(mainFrame, tInfo, {GroupTransparency = 1})
 		local scaleTween = TweenService:Create(uiScale, tInfo, {Scale = 0.85})
@@ -103,7 +104,9 @@ local function createInterface()
 		scaleTween:Play()
 		fadeTween.Completed:Wait()
 		screenGui:Destroy()
-	end)
+	end
+
+	closeBtn.MouseButton1Click:Connect(closeUI)
 
 	-- ЦЕНТРАЛЬНАЯ КАРТОЧКА
 	local centerCard = Instance.new("Frame")
@@ -167,8 +170,6 @@ local function createInterface()
 		t.Completed:Wait()
 		TweenService:Create(loadBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 37)}):Play()
 
-		
-
 		-- Копируем телеграм (если чит позволяет)
 		pcall(function()
 			if setclipboard then setclipboard(TELEGRAM_LINK)
@@ -190,10 +191,14 @@ local function createInterface()
 				pcall(function()
 					StarterGui:SetCore("SendNotification", {
 						Title = "Anonbound";
-						Text = "Script Executed!";
-						Duration = 3;
+						Text = "Script Executed! Closing...";
+						Duration = 2;
 					})
 				end)
+				
+				-- ЖДЕМ 2 СЕКУНДЫ И ЗАКРЫВАЕМ ПЛАВНО
+				task.wait(2)
+				closeUI()
 			end
 		end)
 	end)
@@ -209,7 +214,7 @@ local function createInterface()
 	content.TextSize = 12
 	content.Parent = mainFrame
 
-	return mainFrame, header, uiScale
+	return mainFrame, header, uiScale, screenGui
 end
 
 
@@ -255,7 +260,7 @@ end
 
 
 -- ЗАПУСК
-local window, header, scaleObj = createInterface()
+local window, header, scaleObj, gui = createInterface()
 enableLerpDragging(window, header)
 animateIn(window, scaleObj)
 
