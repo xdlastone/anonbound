@@ -1,0 +1,184 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- === ЦВЕТА FATALITY ===
+local C_BG      = Color3.fromHex("#14141e") -- Темно-синий
+local C_HEADER  = Color3.fromHex("#1c1c2b") -- Хеадер
+local C_ACCENT  = Color3.fromHex("#c72d80") -- Маджента
+local C_TEXT_DIM= Color3.fromHex("#7e7e8c") -- Серый текст
+local C_STROKE  = Color3.fromHex("#2d2d3d") -- Обводка
+
+-- === СОЗДАНИЕ ИНТЕРФЕЙСА ===
+local function createInterface()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "LerpUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = playerGui
+
+    -- Главное окно
+    local mainFrame = Instance.new("CanvasGroup")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 650, 0, 350)
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    mainFrame.BackgroundColor3 = C_BG
+    mainFrame.GroupTransparency = 1
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+
+    -- UIScale (для анимации появления)
+    local uiScale = Instance.new("UIScale")
+    uiScale.Scale = 0.85
+    uiScale.Parent = mainFrame
+
+    -- Закругление
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 16)
+    mainCorner.Parent = mainFrame
+
+    -- Обводка
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.5
+    stroke.Color = C_STROKE
+    stroke.Transparency = 0.5
+    stroke.Parent = mainFrame
+    
+    -- Хеадер
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 50)
+    header.BackgroundColor3 = C_HEADER
+    header.BorderSizePixel = 0
+    header.Parent = mainFrame
+    
+    -- Розовый разделитель
+    local div = Instance.new("Frame")
+    div.Size = UDim2.new(1, 0, 0, 1)
+    div.Position = UDim2.new(0, 0, 1, 0)
+    div.BackgroundColor3 = C_ACCENT
+    div.BorderSizePixel = 0
+    div.Parent = header
+
+    -- Заголовок
+    local title = Instance.new("TextLabel")
+    title.Text = "Anonbound [Loader]"
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 18
+    title.TextColor3 = C_ACCENT
+    title.BackgroundTransparency = 1
+    title.Size = UDim2.new(1, -60, 1, 0)
+    title.Position = UDim2.new(0, 20, 0, 0)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = header
+
+    -- Кнопка закрытия
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Text = "×"
+    closeBtn.Font = Enum.Font.GothamMedium
+    closeBtn.TextSize = 28
+    closeBtn.TextColor3 = C_TEXT_DIM
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Size = UDim2.new(0, 50, 0, 50)
+    closeBtn.Position = UDim2.new(1, -50, 0, 0)
+    closeBtn.Parent = header
+
+    closeBtn.MouseEnter:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_ACCENT}):Play() end)
+    closeBtn.MouseLeave:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play() end)
+    
+    -- === ЛОГИКА ПЛАВНОГО ЗАКРЫТИЯ ===
+    closeBtn.MouseButton1Click:Connect(function()
+        -- Настройки анимации исчезновения
+        local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+        
+        -- 1. Уменьшаем прозрачность до 1 (полностью прозрачный)
+        local fadeTween = TweenService:Create(mainFrame, tweenInfo, {GroupTransparency = 1})
+        
+        -- 2. Уменьшаем масштаб обратно до 0.85
+        local scaleTween = TweenService:Create(uiScale, tweenInfo, {Scale = 0.85})
+        
+        fadeTween:Play()
+        scaleTween:Play()
+        
+        -- Ждем завершения анимации перед удалением
+        fadeTween.Completed:Wait()
+        screenGui:Destroy()
+    end)
+
+    local content = Instance.new("TextLabel")
+    content.Text = "Script in dev guys :("
+    content.Size = UDim2.new(1, 0, 1, -50)
+    content.Position = UDim2.new(0, 0, 0, 50)
+    content.BackgroundTransparency = 1
+    content.TextColor3 = C_TEXT_DIM
+    content.Font = Enum.Font.Gotham
+    content.TextSize = 16
+    content.Parent = mainFrame
+
+    return mainFrame, header, uiScale
+end
+
+
+-- === ЛОГИКА LERP ПЕРЕТАСКИВАНИЯ ===
+local function enableLerpDragging(frame, dragHandle)
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    local targetPosition = frame.Position 
+    local LERP_SPEED = 0.25 
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            targetPosition = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            targetPosition = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function(deltaTime)
+        frame.Position = frame.Position:Lerp(targetPosition, LERP_SPEED)
+    end)
+end
+
+
+-- Анимация появления
+local function animateIn(frame, scaleObj)
+    RunService.RenderStepped:Wait()
+    local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    TweenService:Create(frame, tInfo, {GroupTransparency = 0}):Play()
+    TweenService:Create(scaleObj, tInfo, {Scale = 1.0}):Play()
+end
+
+
+-- ЗАПУСК
+local window, header, scaleObj = createInterface()
+enableLerpDragging(window, header) 
+animateIn(window, scaleObj)
