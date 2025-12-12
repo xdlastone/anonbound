@@ -2,246 +2,280 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui") 
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Ссылка на Telegram (для копирования)
+local TELEGRAM_LINK = "https://t.me/anonbound1337"
+
+-- Ссылка на скрипт (для loadstring)
+local TARGET_SCRIPT_URL = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/LoaderService"
+
 -- === ЦВЕТА FATALITY ===
-local C_BG      = Color3.fromHex("#14141e") -- Темно-синий
-local C_HEADER  = Color3.fromHex("#1c1c2b") -- Хеадер
-local C_ACCENT  = Color3.fromHex("#c72d80") -- Маджента
-local C_TEXT    = Color3.fromHex("#ffffff") -- Белый
-local C_TEXT_DIM= Color3.fromHex("#7e7e8c") -- Серый текст
-local C_STROKE  = Color3.fromHex("#2d2d3d") -- Обводка
-local C_CARD_BG = Color3.fromHex("#1e1e29") -- Фон карточки (чуть светлее фона)
+local C_BG       = Color3.fromHex("#14141e") 
+local C_HEADER   = Color3.fromHex("#1c1c2b") 
+local C_ACCENT   = Color3.fromHex("#c72d80") 
+local C_TEXT     = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
+local C_STROKE   = Color3.fromHex("#2d2d3d") 
+local C_CARD_BG  = Color3.fromHex("#1e1e29") 
 
 -- === СОЗДАНИЕ ИНТЕРФЕЙСА ===
 local function createInterface()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "LerpUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.Parent = playerGui
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "LerpUI"
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.Parent = playerGui
 
-    -- Главное окно
-    local mainFrame = Instance.new("CanvasGroup")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 650, 0, 350)
-    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    mainFrame.BackgroundColor3 = C_BG
-    mainFrame.GroupTransparency = 1
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
+	-- Главное окно
+	local mainFrame = Instance.new("CanvasGroup")
+	mainFrame.Name = "MainFrame"
+	mainFrame.Size = UDim2.new(0, 650, 0, 350)
+	mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+	mainFrame.BackgroundColor3 = C_BG
+	mainFrame.GroupTransparency = 1
+	mainFrame.BorderSizePixel = 0
+	mainFrame.Parent = screenGui
 
-    -- UIScale (для анимации появления)
-    local uiScale = Instance.new("UIScale")
-    uiScale.Scale = 0.85
-    uiScale.Parent = mainFrame
+	local uiScale = Instance.new("UIScale")
+	uiScale.Scale = 0.85
+	uiScale.Parent = mainFrame
 
-    -- Закругление
-    local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 16)
-    mainCorner.Parent = mainFrame
+	local mainCorner = Instance.new("UICorner")
+	mainCorner.CornerRadius = UDim.new(0, 16)
+	mainCorner.Parent = mainFrame
 
-    -- Обводка
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1.5
-    stroke.Color = C_STROKE
-    stroke.Transparency = 0.5
-    stroke.Parent = mainFrame
-    
-    -- Хеадер
-    local header = Instance.new("Frame")
-    header.Name = "Header"
-    header.Size = UDim2.new(1, 0, 0, 50)
-    header.BackgroundColor3 = C_HEADER
-    header.BorderSizePixel = 0
-    header.Parent = mainFrame
-    
-    -- Розовый разделитель
-    local div = Instance.new("Frame")
-    div.Size = UDim2.new(1, 0, 0, 1)
-    div.Position = UDim2.new(0, 0, 1, 0)
-    div.BackgroundColor3 = C_ACCENT
-    div.BorderSizePixel = 0
-    div.Parent = header
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = C_STROKE
+	stroke.Transparency = 0.5
+	stroke.Parent = mainFrame
+	
+	-- Хеадер
+	local header = Instance.new("Frame")
+	header.Name = "Header"
+	header.Size = UDim2.new(1, 0, 0, 50)
+	header.BackgroundColor3 = C_HEADER
+	header.BorderSizePixel = 0
+	header.Parent = mainFrame
+	
+	local div = Instance.new("Frame")
+	div.Size = UDim2.new(1, 0, 0, 1)
+	div.Position = UDim2.new(0, 0, 1, 0)
+	div.BackgroundColor3 = C_ACCENT
+	div.BorderSizePixel = 0
+	div.Parent = header
 
-    -- Заголовок
-    local title = Instance.new("TextLabel")
-    title.Text = "Anonbound [Loader]"
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
-    title.TextColor3 = C_ACCENT
-    title.BackgroundTransparency = 1
-    title.Size = UDim2.new(1, -60, 1, 0)
-    title.Position = UDim2.new(0, 20, 0, 0)
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = header
+	local title = Instance.new("TextLabel")
+	title.Text = "Anonbound [Loader]"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 18
+	title.TextColor3 = C_ACCENT
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1, -60, 1, 0)
+	title.Position = UDim2.new(0, 20, 0, 0)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = header
 
-    -- Кнопка закрытия
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Text = "×"
-    closeBtn.Font = Enum.Font.GothamMedium
-    closeBtn.TextSize = 28
-    closeBtn.TextColor3 = C_TEXT_DIM
-    closeBtn.BackgroundTransparency = 1
-    closeBtn.Size = UDim2.new(0, 50, 0, 50)
-    closeBtn.Position = UDim2.new(1, -50, 0, 0)
-    closeBtn.Parent = header
+	-- Кнопка закрытия
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Text = "×"
+	closeBtn.Font = Enum.Font.GothamMedium
+	closeBtn.TextSize = 28
+	closeBtn.TextColor3 = C_TEXT_DIM
+	closeBtn.BackgroundTransparency = 1
+	closeBtn.Size = UDim2.new(0, 50, 0, 50)
+	closeBtn.Position = UDim2.new(1, -50, 0, 0)
+	closeBtn.Parent = header
 
-    closeBtn.MouseEnter:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_ACCENT}):Play() end)
-    closeBtn.MouseLeave:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play() end)
-    
-    -- === ЛОГИКА ПЛАВНОГО ЗАКРЫТИЯ ===
-    closeBtn.MouseButton1Click:Connect(function()
-        local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-        local fadeTween = TweenService:Create(mainFrame, tweenInfo, {GroupTransparency = 1})
-        local scaleTween = TweenService:Create(uiScale, tweenInfo, {Scale = 0.85})
-        fadeTween:Play()
-        scaleTween:Play()
-        fadeTween.Completed:Wait()
-        screenGui:Destroy()
-    end)
+	closeBtn.MouseEnter:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_ACCENT}):Play() end)
+	closeBtn.MouseLeave:Connect(function() TweenService:Create(closeBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play() end)
+	
+	closeBtn.MouseButton1Click:Connect(function()
+		local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+		local fadeTween = TweenService:Create(mainFrame, tInfo, {GroupTransparency = 1})
+		local scaleTween = TweenService:Create(uiScale, tInfo, {Scale = 0.85})
+		fadeTween:Play()
+		scaleTween:Play()
+		fadeTween.Completed:Wait()
+		screenGui:Destroy()
+	end)
 
-    -- === НОВОЕ: ЦЕНТРАЛЬНАЯ КАРТОЧКА ===
-    local centerCard = Instance.new("Frame")
-    centerCard.Name = "CenterCard"
-    centerCard.Size = UDim2.new(0, 500, 0, 160) -- Размер карточки
-    centerCard.AnchorPoint = Vector2.new(0.5, 0.5)
-    centerCard.Position = UDim2.new(0.5, 0, 0.5, 10) -- По центру окна
-    centerCard.BackgroundColor3 = C_CARD_BG
-    centerCard.BorderSizePixel = 0
-    centerCard.Parent = mainFrame
+	-- ЦЕНТРАЛЬНАЯ КАРТОЧКА
+	local centerCard = Instance.new("Frame")
+	centerCard.Name = "CenterCard"
+	centerCard.Size = UDim2.new(0, 500, 0, 160)
+	centerCard.AnchorPoint = Vector2.new(0.5, 0.5)
+	centerCard.Position = UDim2.new(0.5, 0, 0.5, 10)
+	centerCard.BackgroundColor3 = C_CARD_BG
+	centerCard.BorderSizePixel = 0
+	centerCard.Parent = mainFrame
 
-    -- Скругление карточки
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 12)
-    cardCorner.Parent = centerCard
-    
-    -- Обводка карточки
-    local cardStroke = Instance.new("UIStroke")
-    cardStroke.Color = C_STROKE
-    cardStroke.Thickness = 1
-    cardStroke.Parent = centerCard
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 12)
+	cardCorner.Parent = centerCard
+	
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = C_STROKE
+	cardStroke.Thickness = 1
+	cardStroke.Parent = centerCard
 
-    -- Надпись "Main Script" сверху карточки
-    local cardTitle = Instance.new("TextLabel")
-    cardTitle.Text = "Anonbound [legit]"
-    cardTitle.Font = Enum.Font.GothamBold
-    cardTitle.TextSize = 21
-    cardTitle.TextColor3 = C_TEXT_DIM
-    cardTitle.BackgroundTransparency = 1
-    cardTitle.Size = UDim2.new(1, 0, 0, 100)
-    cardTitle.Position = UDim2.new(0, 0, 0, 5) 
-    cardTitle.Parent = centerCard
+	local cardTitle = Instance.new("TextLabel")
+	cardTitle.Text = "Anonbound [legit]"
+	cardTitle.Font = Enum.Font.GothamBold
+	cardTitle.TextSize = 21
+	cardTitle.TextColor3 = C_TEXT_DIM
+	cardTitle.BackgroundTransparency = 1
+	cardTitle.Size = UDim2.new(1, 0, 0, 100)
+	cardTitle.Position = UDim2.new(0, 0, 0, 5) 
+	cardTitle.Parent = centerCard
 
-    -- КНОПКА "LOAD SCRIPT"
-    local loadBtn = Instance.new("TextButton")
-    loadBtn.Name = "LoadButton"
-    loadBtn.Text = "Load latest script"
-    loadBtn.Font = Enum.Font.GothamBlack
-    loadBtn.TextSize = 14
-    loadBtn.TextColor3 = C_TEXT
-    loadBtn.BackgroundColor3 = C_ACCENT
-    loadBtn.Size = UDim2.new(0, 200, 0, 35)
-    loadBtn.AnchorPoint = Vector2.new(0.5, 1)
-    loadBtn.Position = UDim2.new(0.5, 0, 1, -30) -- Отступ снизу
-    loadBtn.AutoButtonColor = false
-    loadBtn.Parent = centerCard
+	-- КНОПКА "LOAD SCRIPT"
+	local loadBtn = Instance.new("TextButton")
+	loadBtn.Name = "LoadButton"
+	loadBtn.Text = "Load Script"
+	loadBtn.Font = Enum.Font.GothamBlack
+	loadBtn.TextSize = 14
+	loadBtn.TextColor3 = C_TEXT
+	loadBtn.BackgroundColor3 = C_ACCENT
+	loadBtn.Size = UDim2.new(0, 200, 0, 35)
+	loadBtn.AnchorPoint = Vector2.new(0.5, 1)
+	loadBtn.Position = UDim2.new(0.5, 0, 1, -30)
+	loadBtn.AutoButtonColor = false
+	loadBtn.Parent = centerCard
 
-    -- Круглая форма кнопки
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0.2, 0)
-    btnCorner.Parent = loadBtn
-    
-    -- Анимация кнопки
-    loadBtn.MouseEnter:Connect(function()
-        TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromHex("#d93590"), Size = UDim2.new(0, 210, 0, 37)}):Play()
-    end)
-    loadBtn.MouseLeave:Connect(function()
-        TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_ACCENT, Size = UDim2.new(0, 200, 0, 35)}):Play()
-    end)
-    loadBtn.MouseButton1Click:Connect(function()
-        print("Loading script...") 
-        -- Эффект нажатия
-        local t = TweenService:Create(loadBtn, TweenInfo.new(0.05), {Size = UDim2.new(0, 190, 0, 43)})
-        t:Play()
-        t.Completed:Wait()
-        TweenService:Create(loadBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 37)}):Play()
-    end)
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0.2, 0)
+	btnCorner.Parent = loadBtn
+	
+	loadBtn.MouseEnter:Connect(function()
+		TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromHex("#d93590"), Size = UDim2.new(0, 210, 0, 37)}):Play()
+	end)
+	loadBtn.MouseLeave:Connect(function()
+		TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_ACCENT, Size = UDim2.new(0, 200, 0, 35)}):Play()
+	end)
 
-    -- Нижний текст (передвинул вниз, чтобы не мешал)
-    local content = Instance.new("TextLabel")
-    content.Text = "Version: 1.0.0"
-    content.Size = UDim2.new(1, 0, 0, 30)
-    content.AnchorPoint = Vector2.new(0.5, 1)
-    content.Position = UDim2.new(0.5, 0, 1, -10) -- В самом низу окна
-    content.BackgroundTransparency = 1
-    content.TextColor3 = C_TEXT_DIM
-    content.Font = Enum.Font.Gotham
-    content.TextSize = 12
-    content.Parent = mainFrame
+	-- ОБРАБОТЧИК НАЖАТИЯ (LOAD SCRIPT)
+	loadBtn.MouseButton1Click:Connect(function()
+		-- Эффект клика
+		local t = TweenService:Create(loadBtn, TweenInfo.new(0.05), {Size = UDim2.new(0, 190, 0, 43)})
+		t:Play()
+		t.Completed:Wait()
+		TweenService:Create(loadBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 37)}):Play()
+		
+		-- Копируем телеграм (если чит позволяет)
+		pcall(function()
+			if setclipboard then setclipboard(TELEGRAM_LINK)
+			elseif toclipboard then toclipboard(TELEGRAM_LINK) end
+		end)
 
-    return mainFrame, header, uiScale
+		-- ВЫПОЛНЕНИЕ СКРИПТА
+		task.spawn(function()
+			local success, err = pcall(function()
+				loadstring(game:HttpGet(TARGET_SCRIPT_URL))()
+			end)
+			
+			if not success then
+				warn("Injector Error: " .. tostring(err))
+				-- Можно вывести ошибку в чат или уведомление, если хотите
+			else
+				print("Script injected successfully!")
+				-- Уведомление об успехе
+				pcall(function()
+					StarterGui:SetCore("SendNotification", {
+						Title = "Anonbound";
+						Text = "Script Executed!";
+						Duration = 3;
+					})
+				end)
+			end
+		end)
+	end)
+	
+	local content = Instance.new("TextLabel")
+	content.Text = "Version: 1.0.0"
+	content.Size = UDim2.new(1, 0, 0, 30)
+	content.AnchorPoint = Vector2.new(0.5, 1)
+	content.Position = UDim2.new(0.5, 0, 1, -10)
+	content.BackgroundTransparency = 1
+	content.TextColor3 = C_TEXT_DIM
+	content.Font = Enum.Font.Gotham
+	content.TextSize = 12
+	content.Parent = mainFrame
+
+	return mainFrame, header, uiScale
 end
 
 
--- === ЛОГИКА LERP ПЕРЕТАСКИВАНИЯ ===
+-- === LERP ПЕРЕТАСКИВАНИЕ ===
 local function enableLerpDragging(frame, dragHandle)
-    local dragging = false
-    local dragInput, dragStart, startPos
-    
-    local targetPosition = frame.Position 
-    local LERP_SPEED = 0.25 
+	local dragging = false
+	local dragInput, dragStart, startPos
+	local targetPosition = frame.Position 
+	local LERP_SPEED = 0.25 
 
-    dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            targetPosition = frame.Position
+	dragHandle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position; startPos = frame.Position; targetPosition = frame.Position
+			input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+		end
+	end)
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+	dragHandle.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+	end)
 
-    dragHandle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			targetPosition = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            targetPosition = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
-
-    RunService.RenderStepped:Connect(function(deltaTime)
-        frame.Position = frame.Position:Lerp(targetPosition, LERP_SPEED)
-    end)
+	RunService.RenderStepped:Connect(function()
+		frame.Position = frame.Position:Lerp(targetPosition, LERP_SPEED)
+	end)
 end
 
 
 -- Анимация появления
 local function animateIn(frame, scaleObj)
-    RunService.RenderStepped:Wait()
-    local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    TweenService:Create(frame, tInfo, {GroupTransparency = 0}):Play()
-    TweenService:Create(scaleObj, tInfo, {Scale = 1.0}):Play()
+	RunService.RenderStepped:Wait()
+	local tInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	TweenService:Create(frame, tInfo, {GroupTransparency = 0}):Play()
+	TweenService:Create(scaleObj, tInfo, {Scale = 1.0}):Play()
 end
 
 
 -- ЗАПУСК
 local window, header, scaleObj = createInterface()
-enableLerpDragging(window, header) 
+enableLerpDragging(window, header)
 animateIn(window, scaleObj)
+
+
+-- === УВЕДОМЛЕНИЯ ПРИ СТАРТЕ ===
+task.spawn(function()
+	task.wait(1)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = "Anonbound [loader]";
+			Text = "Loader GUI successfully created!";
+			Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150"; 
+			Duration = 5;
+		})
+	end)
+	
+	task.wait(2)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = "Anonbound [loader]";
+			Text = "Join to our telegram channel! (t.me/anonbound1337)";
+			Duration = 10;
+		})
+	end)
+end)
