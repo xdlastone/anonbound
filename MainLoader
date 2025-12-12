@@ -10,8 +10,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 local C_BG      = Color3.fromHex("#14141e") -- Темно-синий
 local C_HEADER  = Color3.fromHex("#1c1c2b") -- Хеадер
 local C_ACCENT  = Color3.fromHex("#c72d80") -- Маджента
+local C_TEXT    = Color3.fromHex("#ffffff") -- Белый
 local C_TEXT_DIM= Color3.fromHex("#7e7e8c") -- Серый текст
 local C_STROKE  = Color3.fromHex("#2d2d3d") -- Обводка
+local C_CARD_BG = Color3.fromHex("#1e1e29") -- Фон карточки (чуть светлее фона)
 
 -- === СОЗДАНИЕ ИНТЕРФЕЙСА ===
 local function createInterface()
@@ -93,31 +95,92 @@ local function createInterface()
     
     -- === ЛОГИКА ПЛАВНОГО ЗАКРЫТИЯ ===
     closeBtn.MouseButton1Click:Connect(function()
-        -- Настройки анимации исчезновения
         local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-        
-        -- 1. Уменьшаем прозрачность до 1 (полностью прозрачный)
         local fadeTween = TweenService:Create(mainFrame, tweenInfo, {GroupTransparency = 1})
-        
-        -- 2. Уменьшаем масштаб обратно до 0.85
         local scaleTween = TweenService:Create(uiScale, tweenInfo, {Scale = 0.85})
-        
         fadeTween:Play()
         scaleTween:Play()
-        
-        -- Ждем завершения анимации перед удалением
         fadeTween.Completed:Wait()
         screenGui:Destroy()
     end)
 
+    -- === НОВОЕ: ЦЕНТРАЛЬНАЯ КАРТОЧКА ===
+    local centerCard = Instance.new("Frame")
+    centerCard.Name = "CenterCard"
+    centerCard.Size = UDim2.new(0, 500, 0, 160) -- Размер карточки
+    centerCard.AnchorPoint = Vector2.new(0.5, 0.5)
+    centerCard.Position = UDim2.new(0.5, 0, 0.5, 10) -- По центру окна
+    centerCard.BackgroundColor3 = C_CARD_BG
+    centerCard.BorderSizePixel = 0
+    centerCard.Parent = mainFrame
+
+    -- Скругление карточки
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 12)
+    cardCorner.Parent = centerCard
+    
+    -- Обводка карточки
+    local cardStroke = Instance.new("UIStroke")
+    cardStroke.Color = C_STROKE
+    cardStroke.Thickness = 1
+    cardStroke.Parent = centerCard
+
+    -- Надпись "Main Script" сверху карточки
+    local cardTitle = Instance.new("TextLabel")
+    cardTitle.Text = "Anonbound [legit]"
+    cardTitle.Font = Enum.Font.GothamBold
+    cardTitle.TextSize = 21
+    cardTitle.TextColor3 = C_TEXT_DIM
+    cardTitle.BackgroundTransparency = 1
+    cardTitle.Size = UDim2.new(1, 0, 0, 100)
+    cardTitle.Position = UDim2.new(0, 0, 0, 5) 
+    cardTitle.Parent = centerCard
+
+    -- КНОПКА "LOAD SCRIPT"
+    local loadBtn = Instance.new("TextButton")
+    loadBtn.Name = "LoadButton"
+    loadBtn.Text = "Load latest script"
+    loadBtn.Font = Enum.Font.GothamBlack
+    loadBtn.TextSize = 14
+    loadBtn.TextColor3 = C_TEXT
+    loadBtn.BackgroundColor3 = C_ACCENT
+    loadBtn.Size = UDim2.new(0, 200, 0, 35)
+    loadBtn.AnchorPoint = Vector2.new(0.5, 1)
+    loadBtn.Position = UDim2.new(0.5, 0, 1, -30) -- Отступ снизу
+    loadBtn.AutoButtonColor = false
+    loadBtn.Parent = centerCard
+
+    -- Круглая форма кнопки
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.2, 0)
+    btnCorner.Parent = loadBtn
+    
+    -- Анимация кнопки
+    loadBtn.MouseEnter:Connect(function()
+        TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromHex("#d93590"), Size = UDim2.new(0, 210, 0, 37)}):Play()
+    end)
+    loadBtn.MouseLeave:Connect(function()
+        TweenService:Create(loadBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_ACCENT, Size = UDim2.new(0, 200, 0, 35)}):Play()
+    end)
+    loadBtn.MouseButton1Click:Connect(function()
+        print("Loading script...") 
+        -- Эффект нажатия
+        local t = TweenService:Create(loadBtn, TweenInfo.new(0.05), {Size = UDim2.new(0, 190, 0, 43)})
+        t:Play()
+        t.Completed:Wait()
+        TweenService:Create(loadBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 37)}):Play()
+    end)
+
+    -- Нижний текст (передвинул вниз, чтобы не мешал)
     local content = Instance.new("TextLabel")
-    content.Text = "Script in dev guys :("
-    content.Size = UDim2.new(1, 0, 1, -50)
-    content.Position = UDim2.new(0, 0, 0, 50)
+    content.Text = "Version: 1.0.0"
+    content.Size = UDim2.new(1, 0, 0, 30)
+    content.AnchorPoint = Vector2.new(0.5, 1)
+    content.Position = UDim2.new(0.5, 0, 1, -10) -- В самом низу окна
     content.BackgroundTransparency = 1
     content.TextColor3 = C_TEXT_DIM
     content.Font = Enum.Font.Gotham
-    content.TextSize = 16
+    content.TextSize = 12
     content.Parent = mainFrame
 
     return mainFrame, header, uiScale
