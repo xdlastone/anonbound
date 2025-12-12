@@ -7,11 +7,10 @@ local StarterGui = game:GetService("StarterGui")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-pcall(function()
+
 		StarterGui:SetCore("SendNotification", {
 			Title = "Anonbound [script]";
 			Text = "Script successfully executed [MainGui]";
 			Duration = 10;
 		})
-	end)
-end)
+
