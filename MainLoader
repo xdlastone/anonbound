@@ -195,14 +195,6 @@ local function createInterface()
 					})
 				end)
 			end
-
-					local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-		local fadeTween = TweenService:Create(mainFrame, tInfo, {GroupTransparency = 1})
-		local scaleTween = TweenService:Create(uiScale, tInfo, {Scale = 0.85})
-		fadeTween:Play()
-		scaleTween:Play()
-		fadeTween.Completed:Wait()
-		screenGui:Destroy()
 		end)
 	end)
 	
