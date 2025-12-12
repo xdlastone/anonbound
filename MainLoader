@@ -166,7 +166,9 @@ local function createInterface()
 		t:Play()
 		t.Completed:Wait()
 		TweenService:Create(loadBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 210, 0, 37)}):Play()
+
 		
+
 		-- Копируем телеграм (если чит позволяет)
 		pcall(function()
 			if setclipboard then setclipboard(TELEGRAM_LINK)
@@ -193,6 +195,14 @@ local function createInterface()
 					})
 				end)
 			end
+
+					local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+		local fadeTween = TweenService:Create(mainFrame, tInfo, {GroupTransparency = 1})
+		local scaleTween = TweenService:Create(uiScale, tInfo, {Scale = 0.85})
+		fadeTween:Play()
+		scaleTween:Play()
+		fadeTween.Completed:Wait()
+		screenGui:Destroy()
 		end)
 	end)
 	
