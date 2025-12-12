@@ -1,121 +1,244 @@
+-- === ЗАЩИТА ОТ ПОВТОРНОГО ЗАПУСКА (SINGLETON) ===
+local env = (getgenv and getgenv()) or _G
+
+if env._FATALITY_HAS_LOADED_SESSION_ then
+	warn("[Fatality]: Скрипт уже был запущен. Повторный запуск запрещен.")
+	return 
+end
+--env._FATALITY_HAS_LOADED_SESSION_ = true
+
+-- ==========================================
+-- ===      НАСТРОЙКИ И ЦВЕТА             ===
+-- ==========================================
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
 
--- === ЦВЕТА FATALITY ===
-local C_BG       = Color3.fromHex("#14141e") 
-local C_HEADER   = Color3.fromHex("#1c1c2b") 
-local C_ACCENT   = Color3.fromHex("#c72d80") 
-local C_TEXT     = Color3.fromHex("#ffffff") 
-local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
-local C_STROKE   = Color3.fromHex("#2d2d3d") 
+-- === ЦВЕТОВАЯ ГАММА (FATALITY RED) ===
+local C_BG       = Color3.new(0, 0, 0) 
+-- Градиент: Сверху ярко, снизу темно (как на фото)
+local C_GRADIENT_TOP = Color3.fromHex("#ff4444") -- Яркий алый
+local C_GRADIENT_BOT = Color3.fromHex("#9e0b0b") -- Темно-кровавый
+
+local C_TEXT     = Color3.fromHex("#ffffff") -- Основа белая (градиент её красит)
 local C_CARD_BG  = Color3.fromHex("#1e1e29")
+local C_STROKE   = Color3.fromHex("#2d2d3d") 
+local C_BAR      = Color3.fromHex("#ff3b3b") 
 
--- === НАСТРОЙКИ ВРЕМЕНИ ===
-local FADE_IN_TIME = 0.5   -- Время появления
-local BAR_FILL_TIME = 3.0  -- Время заполнения полоски
-local FADE_OUT_TIME = 1.0  -- Время исчезновения
-local PAUSE_AT_END = 0.5   -- Пауза на 100% перед исчезновением
+-- Настройки таймингов
+local TIME_BAR_FILL = 2.0
+local TIME_LOGO_APPEAR = 0.8
+local TIME_SLIDE = 0.9 
+local TIME_FADE_OUT = 1.0
 
--- 1. Создание ScreenGui
+-- Шрифт и Размер
+local FONT_FACE = Enum.Font.Sarpanch 
+local TEXT_SIZE = 90 
+
+-- ==========================================
+-- ===      СОЗДАНИЕ GUI                  ===
+-- ==========================================
+
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "LoadingScreenFatality"
-screenGui.IgnoreGuiInset = true -- Перекрывает верхнюю панель
+screenGui.Name = "FatalityInject"
+screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling 
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- 2. Фон (Слой 1)
+-- 1. Blur
+local blurEffect = Instance.new("BlurEffect")
+blurEffect.Name = "FatalityBlur"
+blurEffect.Size = 0 
+blurEffect.Parent = Lighting
+
+-- 2. Фон
 local background = Instance.new("Frame")
 background.Name = "Background"
 background.Size = UDim2.new(1, 0, 1, 0)
 background.BackgroundColor3 = C_BG
 background.BorderSizePixel = 0
-background.BackgroundTransparency = 1
-background.ZIndex = 1 
-background.Parent = screenGui 
+background.BackgroundTransparency = 1 
+background.ZIndex = 1
+background.Parent = screenGui
 
--- 3. Контейнер загрузки (Слой 10 - поверх фона)
+-- 3. Загрузка
+local loadingGroup = Instance.new("Frame")
+loadingGroup.Name = "LoadingGroup"
+loadingGroup.Size = UDim2.new(1, 0, 1, 0)
+loadingGroup.BackgroundTransparency = 1
+loadingGroup.ZIndex = 5
+loadingGroup.Parent = screenGui
+
 local loadingContainer = Instance.new("Frame")
-loadingContainer.Name = "LoadingContainer"
-loadingContainer.Size = UDim2.new(0, 300, 0, 6)
+loadingContainer.Size = UDim2.new(0, 350, 0, 8) 
 loadingContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 loadingContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
 loadingContainer.BackgroundColor3 = C_CARD_BG
-loadingContainer.BorderSizePixel = 0
 loadingContainer.BackgroundTransparency = 1
-loadingContainer.ZIndex = 10 
-loadingContainer.Parent = screenGui 
+loadingContainer.Parent = loadingGroup
 
--- Обводка контейнера
 local stroke = Instance.new("UIStroke")
 stroke.Color = C_STROKE
 stroke.Thickness = 1
 stroke.Transparency = 1
 stroke.Parent = loadingContainer
 
--- Скругление контейнера
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 2)
-corner.Parent = loadingContainer
-
--- 4. Сама полоска (внутри контейнера)
 local loadingBar = Instance.new("Frame")
-loadingBar.Name = "BarFill"
 loadingBar.Size = UDim2.new(0, 0, 1, 0)
-loadingBar.BackgroundColor3 = C_ACCENT
+loadingBar.BackgroundColor3 = C_BAR
 loadingBar.BorderSizePixel = 0
 loadingBar.BackgroundTransparency = 1
-loadingBar.ZIndex = 11 
 loadingBar.Parent = loadingContainer
 
-local barCorner = Instance.new("UICorner")
-barCorner.CornerRadius = UDim.new(0, 2)
-barCorner.Parent = loadingBar
+-- 4. Логотип
+local logoGroup = Instance.new("Frame")
+logoGroup.Name = "LogoGroup"
+logoGroup.Size = UDim2.new(0, 600, 0, 150)
+logoGroup.AnchorPoint = Vector2.new(0.5, 0.5)
+logoGroup.Position = UDim2.new(0.5, 0, 0.5, 0)
+logoGroup.BackgroundTransparency = 1
+logoGroup.ZIndex = 10
+logoGroup.Visible = false
+logoGroup.Parent = screenGui
 
--- === АНИМАЦИЯ ПОЯВЛЕНИЯ ===
+-- === СОЗДАНИЕ ТЕКСТА С ГРАДИЕНТОМ ===
 
-local tweenInfoAppear = TweenInfo.new(FADE_IN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+-- Функция для создания градиента (чтобы он был одинаковый у обоих кусков)
+local function createFatalityGradient(parent)
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0.0, C_GRADIENT_TOP),
+		ColorSequenceKeypoint.new(1.0, C_GRADIENT_BOT)
+	}
+	g.Rotation = 90 -- Вертикальный градиент (Сверху вниз), чтобы стык был идеальным
+	g.Parent = parent
+	return g
+end
 
--- Создаем твины появления
-local bgTweenIn = TweenService:Create(background, tweenInfoAppear, {BackgroundTransparency = 0})
-local containerTweenIn = TweenService:Create(loadingContainer, tweenInfoAppear, {BackgroundTransparency = 0})
-local strokeTweenIn = TweenService:Create(stroke, tweenInfoAppear, {Transparency = 0})
-local barFadeTweenIn = TweenService:Create(loadingBar, tweenInfoAppear, {BackgroundTransparency = 0})
+-- Буква "A"
+local textA = Instance.new("TextLabel")
+textA.Name = "Text_A"
+textA.Text = "A" 
+textA.Font = FONT_FACE
+textA.TextSize = TEXT_SIZE
+textA.TextColor3 = C_TEXT
+textA.BackgroundTransparency = 1
+textA.Size = UDim2.new(0, 100, 0, 110)
+textA.AnchorPoint = Vector2.new(0.5, 0.5)
+textA.Position = UDim2.new(0.5, 0, 0.5, 0)
+textA.ZIndex = 12
+textA.TextTransparency = 1
+textA.TextXAlignment = Enum.TextXAlignment.Center
+textA.Parent = logoGroup
 
--- Запускаем появление
-bgTweenIn:Play()
-containerTweenIn:Play()
-strokeTweenIn:Play()
-barFadeTweenIn:Play()
+createFatalityGradient(textA) -- Применяем градиент к A
 
-task.wait(FADE_IN_TIME * 0.5) -- Ждем чуть-чуть перед началом заполнения
+-- Текст "NONBOUND"
+local textNonbound = Instance.new("TextLabel")
+textNonbound.Name = "Text_NONBOUND"
+textNonbound.Text = "NONBOUND"
+textNonbound.Font = FONT_FACE
+textNonbound.TextSize = TEXT_SIZE
+textNonbound.TextColor3 = C_TEXT
+textNonbound.BackgroundTransparency = 1
+textNonbound.Size = UDim2.new(0, 500, 0, 110)
+textNonbound.AnchorPoint = Vector2.new(0, 0.5)
+textNonbound.Position = UDim2.new(0.5, -20, 0.5, 0) 
+textNonbound.ZIndex = 11
+textNonbound.TextTransparency = 1
+textNonbound.TextXAlignment = Enum.TextXAlignment.Left 
+textNonbound.Parent = logoGroup
 
--- === АНИМАЦИЯ ЗАПОЛНЕНИЯ ===
-local fillInfo = TweenInfo.new(BAR_FILL_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local fillTween = TweenService:Create(loadingBar, fillInfo, {Size = UDim2.new(1, 0, 1, 0)})
+createFatalityGradient(textNonbound) -- Применяем ТОТ ЖЕ градиент к NONBOUND
 
-fillTween:Play()
+-- ==========================================
+-- ===      ЛОГИКА АНИМАЦИИ               ===
+-- ==========================================
 
--- === АНИМАЦИЯ ИСЧЕЗНОВЕНИЯ (Когда полоска заполнится) ===
-fillTween.Completed:Connect(function()
-	task.wait(PAUSE_AT_END) -- Даем игроку секунду полюбоваться полной полоской
+local function RunPayload()
+	print(">>> ANONBOUND LOADED <<<")
+	-- ВСТАВЛЯЙ КОД СЮДА
+end
+
+task.spawn(function()
+	-- 1. Старт
+	local tInfo = TweenInfo.new(1, Enum.EasingStyle.Sine)
+	TweenService:Create(background, tInfo, {BackgroundTransparency = 0.2}):Play()
+	TweenService:Create(blurEffect, tInfo, {Size = 24}):Play()
+	TweenService:Create(loadingContainer, tInfo, {BackgroundTransparency = 0}):Play()
+	TweenService:Create(stroke, tInfo, {Transparency = 0}):Play()
+	TweenService:Create(loadingBar, tInfo, {BackgroundTransparency = 0}):Play()
 	
-	local fadeOutInfo = TweenInfo.new(FADE_OUT_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	task.wait(1)
 	
-	-- Создаем твины исчезновения (ставим прозрачность обратно на 1)
-	local bgOut = TweenService:Create(background, fadeOutInfo, {BackgroundTransparency = 1})
-	local containerOut = TweenService:Create(loadingContainer, fadeOutInfo, {BackgroundTransparency = 1})
-	local barOut = TweenService:Create(loadingBar, fadeOutInfo, {BackgroundTransparency = 1})
-	local strokeOut = TweenService:Create(stroke, fadeOutInfo, {Transparency = 1}) -- У Stroke просто Transparency
+	-- 2. Заполнение
+	local fillInfo = TweenInfo.new(TIME_BAR_FILL, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local fillTween = TweenService:Create(loadingBar, fillInfo, {Size = UDim2.new(1, 0, 1, 0)})
+	fillTween:Play()
+	fillTween.Completed:Wait()
 	
-	-- Запускаем исчезновение
-	bgOut:Play()
-	containerOut:Play()
-	barOut:Play()
-	strokeOut:Play()
+	task.wait(0.3)
 	
-	-- Ждем завершения анимации исчезновения и удаляем GUI
-	task.wait(FADE_OUT_TIME)
+	-- 3. Скрытие полоски
+	local hideInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine)
+	TweenService:Create(loadingContainer, hideInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(loadingBar, hideInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(stroke, hideInfo, {Transparency = 1}):Play()
+	
+	task.wait(0.3)
+	logoGroup.Visible = true
+	
+	-- 4. Появление A
+	textA.TextTransparency = 1
+	textA.Size = UDim2.new(0, 0, 0, 0)
+	
+	local appearInfo = TweenInfo.new(TIME_LOGO_APPEAR, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	TweenService:Create(textA, appearInfo, {
+		TextTransparency = 0,
+		Size = UDim2.new(0, 90, 0, 110)
+	}):Play()
+	
+	task.wait(TIME_LOGO_APPEAR + 0.3)
+	
+	-- 5. СТЫКОВКА (ANONBOUND)
+	-- Параметры для настройки расстояния
+	local centerShift = 210 -- Насколько далеко влево уезжает A (половина ширины всего слова)
+	local gapFix = 25       -- Корректировка стыка. Увеличь, если нужно ближе. Уменьши, если нужен пробел.
+	
+	-- Анимация A (едет влево)
+	local moveA_Info = TweenInfo.new(TIME_SLIDE, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	TweenService:Create(textA, moveA_Info, {
+		Position = UDim2.new(0.5, -centerShift, 0.5, 0) 
+	}):Play()
+	
+	local moveText_Info = TweenInfo.new(TIME_SLIDE, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+	
+	-- Начальная позиция NONBOUND (под A)
+	textNonbound.Position = UDim2.new(0.5, -centerShift, 0.5, 0)
+	
+	-- Выезд NONBOUND вправо от A
+	TweenService:Create(textNonbound, moveText_Info, {
+		TextTransparency = 0,
+		-- Мы сдвигаем его вправо от позиции A на величину gapFix
+		Position = UDim2.new(0.5, -centerShift + gapFix, 0.5, 0) 
+	}):Play()
+	
+	task.wait(TIME_SLIDE + 2.0) -- Держим паузу подольше, чтобы насладиться результатом
+	
+	-- 6. Финал
+	local finalFadeInfo = TweenInfo.new(TIME_FADE_OUT, Enum.EasingStyle.Sine)
+	
+	TweenService:Create(background, finalFadeInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(blurEffect, finalFadeInfo, {Size = 0}):Play()
+	TweenService:Create(textA, finalFadeInfo, {TextTransparency = 1}):Play()
+	TweenService:Create(textNonbound, finalFadeInfo, {TextTransparency = 1}):Play()
+	
+	task.wait(TIME_FADE_OUT)
+	
 	screenGui:Destroy()
+	blurEffect:Destroy()
+	RunPayload()
 end)
-
