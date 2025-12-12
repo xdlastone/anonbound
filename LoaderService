@@ -160,7 +160,7 @@ createFatalityGradient(textNonbound) -- Применяем ТОТ ЖЕ град�
 
 local function RunPayload()
 	print(">>> ANONBOUND LOADED <<<")
-	-- ВСТАВЛЯЙ КОД СЮДА
+loadstring(game:HttpGet("https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/MainGui"))()
 end
 
 task.spawn(function()
