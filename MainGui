@@ -1,0 +1,8 @@
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = "Anonbound [script]";
+			Text = "Script successfully executed [MainGui]";
+			Duration = 10;
+		})
+	end)
+end)
