@@ -1,1 +1,121 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+-- === ЦВЕТА FATALITY ===
+local C_BG       = Color3.fromHex("#14141e") 
+local C_HEADER   = Color3.fromHex("#1c1c2b") 
+local C_ACCENT   = Color3.fromHex("#c72d80") 
+local C_TEXT     = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
+local C_STROKE   = Color3.fromHex("#2d2d3d") 
+local C_CARD_BG  = Color3.fromHex("#1e1e29")
+
+-- === НАСТРОЙКИ ВРЕМЕНИ ===
+local FADE_IN_TIME = 0.5   -- Время появления
+local BAR_FILL_TIME = 3.0  -- Время заполнения полоски
+local FADE_OUT_TIME = 1.0  -- Время исчезновения
+local PAUSE_AT_END = 0.5   -- Пауза на 100% перед исчезновением
+
+-- 1. Создание ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LoadingScreenFatality"
+screenGui.IgnoreGuiInset = true -- Перекрывает верхнюю панель
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling 
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- 2. Фон (Слой 1)
+local background = Instance.new("Frame")
+background.Name = "Background"
+background.Size = UDim2.new(1, 0, 1, 0)
+background.BackgroundColor3 = C_BG
+background.BorderSizePixel = 0
+background.BackgroundTransparency = 1
+background.ZIndex = 1 
+background.Parent = screenGui 
+
+-- 3. Контейнер загрузки (Слой 10 - поверх фона)
+local loadingContainer = Instance.new("Frame")
+loadingContainer.Name = "LoadingContainer"
+loadingContainer.Size = UDim2.new(0, 300, 0, 6)
+loadingContainer.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+loadingContainer.BackgroundColor3 = C_CARD_BG
+loadingContainer.BorderSizePixel = 0
+loadingContainer.BackgroundTransparency = 1
+loadingContainer.ZIndex = 10 
+loadingContainer.Parent = screenGui 
+
+-- Обводка контейнера
+local stroke = Instance.new("UIStroke")
+stroke.Color = C_STROKE
+stroke.Thickness = 1
+stroke.Transparency = 1
+stroke.Parent = loadingContainer
+
+-- Скругление контейнера
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 2)
+corner.Parent = loadingContainer
+
+-- 4. Сама полоска (внутри контейнера)
+local loadingBar = Instance.new("Frame")
+loadingBar.Name = "BarFill"
+loadingBar.Size = UDim2.new(0, 0, 1, 0)
+loadingBar.BackgroundColor3 = C_ACCENT
+loadingBar.BorderSizePixel = 0
+loadingBar.BackgroundTransparency = 1
+loadingBar.ZIndex = 11 
+loadingBar.Parent = loadingContainer
+
+local barCorner = Instance.new("UICorner")
+barCorner.CornerRadius = UDim.new(0, 2)
+barCorner.Parent = loadingBar
+
+-- === АНИМАЦИЯ ПОЯВЛЕНИЯ ===
+
+local tweenInfoAppear = TweenInfo.new(FADE_IN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+
+-- Создаем твины появления
+local bgTweenIn = TweenService:Create(background, tweenInfoAppear, {BackgroundTransparency = 0})
+local containerTweenIn = TweenService:Create(loadingContainer, tweenInfoAppear, {BackgroundTransparency = 0})
+local strokeTweenIn = TweenService:Create(stroke, tweenInfoAppear, {Transparency = 0})
+local barFadeTweenIn = TweenService:Create(loadingBar, tweenInfoAppear, {BackgroundTransparency = 0})
+
+-- Запускаем появление
+bgTweenIn:Play()
+containerTweenIn:Play()
+strokeTweenIn:Play()
+barFadeTweenIn:Play()
+
+task.wait(FADE_IN_TIME * 0.5) -- Ждем чуть-чуть перед началом заполнения
+
+-- === АНИМАЦИЯ ЗАПОЛНЕНИЯ ===
+local fillInfo = TweenInfo.new(BAR_FILL_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local fillTween = TweenService:Create(loadingBar, fillInfo, {Size = UDim2.new(1, 0, 1, 0)})
+
+fillTween:Play()
+
+-- === АНИМАЦИЯ ИСЧЕЗНОВЕНИЯ (Когда полоска заполнится) ===
+fillTween.Completed:Connect(function()
+	task.wait(PAUSE_AT_END) -- Даем игроку секунду полюбоваться полной полоской
+	
+	local fadeOutInfo = TweenInfo.new(FADE_OUT_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	
+	-- Создаем твины исчезновения (ставим прозрачность обратно на 1)
+	local bgOut = TweenService:Create(background, fadeOutInfo, {BackgroundTransparency = 1})
+	local containerOut = TweenService:Create(loadingContainer, fadeOutInfo, {BackgroundTransparency = 1})
+	local barOut = TweenService:Create(loadingBar, fadeOutInfo, {BackgroundTransparency = 1})
+	local strokeOut = TweenService:Create(stroke, fadeOutInfo, {Transparency = 1}) -- У Stroke просто Transparency
+	
+	-- Запускаем исчезновение
+	bgOut:Play()
+	containerOut:Play()
+	barOut:Play()
+	strokeOut:Play()
+	
+	-- Ждем завершения анимации исчезновения и удаляем GUI
+	task.wait(FADE_OUT_TIME)
+	screenGui:Destroy()
+end)
 
