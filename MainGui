@@ -4,6 +4,7 @@ local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 -- [[ CONFIGURATION: COLORS ]] --
 local C_BG          = Color3.fromHex("#14141e") 
@@ -22,6 +23,10 @@ local C_BLOCK_GRADIENT_BOTTOM = Color3.fromHex("#1a1a25")
 
 
 -- [[ BLUR SETUP ]] --
+for _, child in pairs(Lighting:GetChildren()) do
+    if child.Name == "AnonboundBlur" then child:Destroy() end
+end
+
 local blurEffect = Instance.new("BlurEffect")
 blurEffect.Name = "AnonboundBlur"
 blurEffect.Size = 0 
@@ -31,6 +36,9 @@ blurEffect.Parent = Lighting
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WakeUI"
 screenGui.ResetOnSpawn = false 
+if playerGui:FindFirstChild("WakeUI") then
+    playerGui.WakeUI:Destroy()
+end
 screenGui.Parent = playerGui
 
 -- ============================================================================
@@ -171,7 +179,7 @@ headerFrame.Size = UDim2.new(1, 0, 0, 60)
 headerFrame.Position = UDim2.new(0, 0, 0, 0)
 headerFrame.BackgroundColor3 = C_HEADER
 headerFrame.BorderSizePixel = 0
-headerFrame.ZIndex = 10 -- Фон шапки
+headerFrame.ZIndex = 10 
 headerFrame.Parent = mainFrame
 
 local headerCorner = Instance.new("UICorner")
@@ -186,20 +194,74 @@ headerPatch.BorderSizePixel = 0
 headerPatch.ZIndex = 10
 headerPatch.Parent = headerFrame
 
--- Title
+-- ============================================================================
+-- [[ AGGRESSIVE FATALITY GLITCH LOGIC ]]
+-- ============================================================================
+
 local title = Instance.new("TextLabel")
+title.Name = "TitleMain"
 title.Size = UDim2.new(0, 200, 1, 0)
 title.Position = UDim2.new(0, 20, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "ANONBOUND"
-title.TextColor3 = C_TEXT
+title.TextColor3 = C_TEXT -- Белый
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.ZIndex = 12 -- ВАЖНО: Выше фона
+title.ZIndex = 14 
 title.Parent = headerFrame
 
--- [[ FUNCTIONAL BUTTONS (CENTER) ]] --
+local function EnableFatalityGlitch(mainTitle)
+    local ColorRed = Color3.fromRGB(255, 30, 30)
+    local ColorBlue = Color3.fromRGB(50, 50, 255)
+    
+    local ghostRed = mainTitle:Clone()
+    ghostRed.Name = "GhostRed"
+    ghostRed.Parent = mainTitle.Parent
+    ghostRed.TextColor3 = ColorRed
+    ghostRed.ZIndex = 13
+    ghostRed.TextTransparency = 0.25 -- Уменьшил прозрачность (стал ярче)
+    
+    local ghostBlue = mainTitle:Clone()
+    ghostBlue.Name = "GhostBlue"
+    ghostBlue.Parent = mainTitle.Parent
+    ghostBlue.TextColor3 = ColorBlue
+    ghostBlue.ZIndex = 13
+    ghostBlue.TextTransparency = 0.25 -- Уменьшил прозрачность (стал ярче)
+
+    local basePos = mainTitle.Position
+    
+    RunService.Heartbeat:Connect(function()
+        if not mainTitle or not mainTitle.Parent then return end
+
+        -- Увеличен шанс сильного лага и его интенсивность
+        local isSpike = math.random() > 0.85 
+        local intensity = isSpike and 6 or 2.5 
+        
+        local offX_Red = math.random(-intensity, intensity)
+        local offY_Red = math.random(-intensity/2, intensity/2)
+        local offX_Blue = math.random(-intensity, intensity)
+        local offY_Blue = math.random(-intensity/2, intensity/2)
+
+        ghostRed.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + offX_Red, basePos.Y.Scale, basePos.Y.Offset + offY_Red)
+        ghostBlue.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset - offX_Blue, basePos.Y.Scale, basePos.Y.Offset - offY_Blue)
+        
+        -- Более частое и агрессивное мерцание
+        if math.random() > 0.9 then
+            ghostRed.Visible = not ghostRed.Visible
+        elseif math.random() > 0.9 then
+            ghostBlue.Visible = not ghostBlue.Visible
+        else
+            ghostRed.Visible = true
+            ghostBlue.Visible = true
+        end
+    end)
+end
+
+EnableFatalityGlitch(title)
+
+
+-- [[ FUNCTIONAL BUTTONS ]] --
 local navContainer = Instance.new("Frame")
 navContainer.Name = "NavContainer"
 navContainer.Size = UDim2.new(0, 520, 1, 0)
@@ -216,7 +278,6 @@ navList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 navList.VerticalAlignment = Enum.VerticalAlignment.Center
 navList.Padding = UDim.new(0, 10)
 
--- [[ ИСПРАВЛЕННАЯ ФУНКЦИЯ КНОПОК (FIXED) ]] --
 local function CreateFuncButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Name = text
@@ -228,7 +289,7 @@ local function CreateFuncButton(text, callback)
     btn.Text = text
     btn.TextSize = 12
     btn.TextColor3 = C_TEXT_DIM
-    btn.AutoButtonColor = false -- Отключаем встроенную реакцию Роблокса
+    btn.AutoButtonColor = false 
     btn.ZIndex = 12
     
     local uic = Instance.new("UICorner")
@@ -246,11 +307,9 @@ local function CreateFuncButton(text, callback)
     padding.PaddingRight = UDim.new(0, 12)
     padding.Parent = btn
 
-    -- == ЛОГИКА АНИМАЦИИ ==
     local isHovered = false
-    local activeTweens = {} -- Таблица для хранения текущих анимаций этой кнопки
+    local activeTweens = {} 
 
-    -- Функция для отмены всех старых анимаций
     local function cleanup()
         for _, t in pairs(activeTweens) do
             if t then t:Cancel() end
@@ -258,16 +317,13 @@ local function CreateFuncButton(text, callback)
         activeTweens = {}
     end
 
-    -- Единая функция запуска анимации
     local function animate(textColor, bgColor, strokeColor)
-        cleanup() -- Сначала жестко останавливаем всё, что двигалось до этого
-
+        cleanup() 
         local t1 = TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = textColor, BackgroundColor3 = bgColor})
         local t2 = TweenService:Create(uis, TweenInfo.new(0.2), {Color = strokeColor})
         
         table.insert(activeTweens, t1)
         table.insert(activeTweens, t2)
-        
         t1:Play()
         t2:Play()
     end
@@ -279,8 +335,6 @@ local function CreateFuncButton(text, callback)
 
     btn.MouseLeave:Connect(function()
         isHovered = false
-        -- Добавляем микро-задержку. Если вы дернули мышкой, скрипт проверит состояние через 0.05 сек.
-        -- Если курсор всё ещё не на кнопке — тогда и только тогда запускаем анимацию ухода.
         task.delay(0.05, function()
             if not isHovered then
                 animate(C_TEXT_DIM, C_BG, C_STROKE)
@@ -290,11 +344,9 @@ local function CreateFuncButton(text, callback)
     
     btn.MouseButton1Click:Connect(function()
          cleanup()
-         -- Мгновенный эффект нажатия
          TweenService:Create(btn, TweenInfo.new(0.05), {TextColor3 = C_ACCENT, BackgroundColor3 = C_HEADER}):Play()
          task.wait(0.05)
          
-         -- Возвращаем состояние в зависимости от того, где сейчас мышь
          if isHovered then
              animate(C_TEXT, C_BLOCK_HEADER, C_ACCENT)
          else
@@ -322,7 +374,7 @@ CreateFuncButton("Troll", function()
     SendNotification("Anonbound", "Trolling is in development", 3)
 end)
 
--- [[ THEME DROPDOWN LOGIC (FIXED) ]] --
+-- [[ THEME DROPDOWN LOGIC ]] --
 local function CreateThemeDropdown()
     local DropdownContainer = Instance.new("Frame")
     DropdownContainer.Name = "ThemeDropdown"
@@ -461,7 +513,7 @@ profileContainer.AnchorPoint = Vector2.new(1, 0.5)
 profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
 profileContainer.BackgroundColor3 = C_BG 
 profileContainer.BorderSizePixel = 0
-profileContainer.ZIndex = 12 -- ВАЖНО: Выше фона
+profileContainer.ZIndex = 12 
 profileContainer.Parent = headerFrame
 
 local profileCorner = Instance.new("UICorner")
@@ -481,7 +533,7 @@ avatarImage.AnchorPoint = Vector2.new(0, 0.5)
 avatarImage.BackgroundColor3 = C_CARD_BG
 avatarImage.BackgroundTransparency = 1
 avatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=150&h=150"
-avatarImage.ZIndex = 13 -- ВАЖНО: Поверх контейнера
+avatarImage.ZIndex = 13 
 avatarImage.Parent = profileContainer
 
 local avatarCorner = Instance.new("UICorner")
@@ -498,7 +550,7 @@ nameLabel.TextColor3 = C_TEXT
 nameLabel.Font = Enum.Font.GothamMedium
 nameLabel.TextSize = 13
 nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-nameLabel.ZIndex = 13 -- ВАЖНО: Поверх контейнера
+nameLabel.ZIndex = 13 
 nameLabel.Parent = profileContainer
 
 -- [[ LINES (Separators) ]] --
@@ -537,7 +589,6 @@ local function CreateContentBlock(parent, name, position, size, title)
     Block.BorderSizePixel = 0
     Block.ClipsDescendants = true 
     
-    -- [[ GRADIENT ]] --
     local Gradient = Instance.new("UIGradient")
     Gradient.Rotation = 45 
     Gradient.Color = ColorSequence.new{
@@ -669,9 +720,11 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 
---[[ SYSTEM: ANIMATION & DESTRUCT ]]
+--[[ SYSTEM: ANIMATION & DESTRUCT & MOUSE LOCK ]]
 local isMenuOpen = false
 local isAnimating = false
+local mouseLoop = nil -- Переменная для хранения цикла разблокировки курсора
+
 local OPEN_SIZE = UDim2.new(0, 900, 0, 600)
 local CLOSED_SIZE = UDim2.new(0, 0, 0, 0)
 
@@ -680,7 +733,16 @@ local function toggleMenu()
     isAnimating = true
 
     if isMenuOpen then
-        -- Close
+        -- CLOSING
+        -- Отключаем принудительную разблокировку курсора
+        if mouseLoop then
+            mouseLoop:Disconnect()
+            mouseLoop = nil
+        end
+        -- Возвращаем контроль игре
+        UIS.MouseIconEnabled = false
+        UIS.MouseBehavior = Enum.MouseBehavior.LockCenter
+        
         TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = CLOSED_SIZE})
         tween:Play()
@@ -688,8 +750,17 @@ local function toggleMenu()
         if mainFrame then mainFrame.Visible = false end
         isMenuOpen = false
     else
-        -- Open
+        -- OPENING
         if mainFrame then mainFrame.Visible = true end
+        
+        -- Включаем цикл принудительного показа курсора (перебивает шутеры)
+        if not mouseLoop then
+            mouseLoop = RunService.RenderStepped:Connect(function()
+                UIS.MouseIconEnabled = true
+                UIS.MouseBehavior = Enum.MouseBehavior.Default
+            end)
+        end
+        
         TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = OPEN_SIZE})
         tween:Play()
@@ -709,6 +780,7 @@ inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Enum.KeyCode.Insert then
         SendNotification("System", "Uninjecting software...", 3)
         if inputConnection then inputConnection:Disconnect() end
+        if mouseLoop then mouseLoop:Disconnect() end -- Очистка курсора при выходе
         task.delay(1, function()
             if blurEffect then blurEffect:Destroy() end
             if screenGui then screenGui:Destroy() end
