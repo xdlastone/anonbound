@@ -1,17 +1,196 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui") 
-
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+
+-- Configuration: Colors
+local C_BG       = Color3.fromHex("#14141e") 
+local C_HEADER   = Color3.fromHex("#1c1c2b") 
+local C_ACCENT   = Color3.fromHex("#c72d80") 
+local C_TEXT     = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
+local C_STROKE   = Color3.fromHex("#2d2d3d") 
+local C_CARD_BG  = Color3.fromHex("#1e1e29")
+
+-- Create Main ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "WakeUI"
+screenGui.ResetOnSpawn = false 
+screenGui.Parent = playerGui
+
+-- Main Container
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 710, 0, 400)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.BackgroundColor3 = C_BG
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+-- Add Stroke (Outline)
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = C_STROKE
+mainStroke.Thickness = 1
+mainStroke.Parent = mainFrame
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+
+-- Title/Header Area
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0, 75, 0, 40)
+title.Position = UDim2.new(0, 45, 0, 10)
+title.BackgroundTransparency = 1
+title.Text = "Anonbound"
+title.TextColor3 = C_TEXT
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
+
+local version = Instance.new("TextLabel")
+version.Size = UDim2.new(0, 100, 0, 20)
+version.Position = UDim2.new(0, 150, 0, 3)
+version.BackgroundTransparency = 1
+version.Text = "Alpha [v1.0.0]"
+version.TextColor3 = C_TEXT_DIM
+version.Font = Enum.Font.GothamBold
+version.TextSize = 14
+version.TextXAlignment = Enum.TextXAlignment.Left
+version.Parent = mainFrame
+
+-- Divider Lines
+local line = Instance.new("Frame")
+line.Size = UDim2.new(0, 1, 0, 400)
+line.Position = UDim2.new(0, 240, 0, 0)
+line.BackgroundColor3 = C_STROKE
+line.BorderSizePixel = 0
+line.Parent = mainFrame
+
+local line2 = Instance.new("Frame")
+line2.Size = UDim2.new(0, 240, 0, 1)
+line2.Position = UDim2.new(0, 0, 0, 60)
+line2.BackgroundColor3 = C_STROKE
+line2.BorderSizePixel = 0
+line2.Parent = mainFrame
+
+-- Function Box
+local functBox = Instance.new("Frame")
+functBox.Size = UDim2.new(0, 240, 0, 400)
+functBox.Position = UDim2.new(0, 242, 0, 0)
+functBox.BackgroundColor3 = C_CARD_BG 
+functBox.BackgroundTransparency = 1 
+functBox.BorderSizePixel = 0
+functBox.Parent = mainFrame
+
+local line3 = Instance.new("Frame")
+line3.Size = UDim2.new(0, 1, 0, 400)
+line3.Position = UDim2.new(0, 482, 0, 0)
+line3.BackgroundColor3 = C_STROKE
+line3.BorderSizePixel = 0
+line3.Parent = mainFrame
+
+-- Custom Accent Element
+local accentBar = Instance.new("Frame")
+accentBar.Size = UDim2.new(0, 4, 0, 20)
+accentBar.Position = UDim2.new(0, 30, 0, 20)
+accentBar.BackgroundColor3 = C_ACCENT
+accentBar.BorderSizePixel = 0
+accentBar.Parent = mainFrame
+local accentCorner = Instance.new("UICorner")
+accentCorner.CornerRadius = UDim.new(0, 4)
+accentCorner.Parent = accentBar
 
 
-		StarterGui:SetCore("SendNotification", {
-			Title = "Anonbound [script]";
-Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150"; 
-			Text = "Script successfully executed [MainGui]";
-			Duration = 10;
-		})
+--[[ 
+    SMOOTH DRAG (LERP) SYSTEM 
+]]
+local dragging
+local dragInput
+local dragStart
+local startPos
 
+local DRAG_SPEED = 0.15
+
+local function update(input)
+    -- Если UI удален, останавливаем обновление
+    if not mainFrame or not mainFrame.Parent then return end
+    
+    local delta = input.Position - dragStart
+    local targetPos = UDim2.new(
+        startPos.X.Scale, 
+        startPos.X.Offset + delta.X, 
+        startPos.Y.Scale, 
+        startPos.Y.Offset + delta.Y
+    )
+    
+    local tweenInfo = TweenInfo.new(DRAG_SPEED, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(mainFrame, tweenInfo, {Position = targetPos})
+    tween:Play()
+end
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+
+--[[
+    DESTRUCT SYSTEM (INSERT KEY)
+    Удаляет UI при нажатии клавиши
+]]
+local connection
+connection = UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end 
+    
+    if input.KeyCode == Enum.KeyCode.Insert then
+        if screenGui then
+            screenGui:Destroy() -- Полностью удаляет объект
+        end
+        
+        -- Отключаем прослушивание клавиш после удаления
+        if connection then
+            connection:Disconnect()
+        end
+
+ -- Notification Start
+StarterGui:SetCore("SendNotification", {
+    Title = "Anonbound [script]",
+    Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150", 
+    Text = "Anonbound successfully uninjeted!",
+    Duration = 5
+})
+    end
+end)
+
+
+-- Notification Start
+StarterGui:SetCore("SendNotification", {
+    Title = "Anonbound [script]",
+    Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150", 
+    Text = "Script successfully loaded in-game! Press [insert] to uninject the software.",
+    Duration = 5
+})
