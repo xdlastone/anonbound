@@ -777,5 +777,5 @@ toggleMenu()
 end)
 
 -- 30 Seconds Duration
-SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Press [Home] to toggle.", 30)
+SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Thanks for executing our script.", 30)
 SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
