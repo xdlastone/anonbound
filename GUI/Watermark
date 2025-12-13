@@ -1,0 +1,14 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui") 
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+StarterGui:SetCore("SendNotification", {
+			Title = "Anonbound [loader]";
+			Text = "Join to our telegram channel! (t.me/anonbound1337)";
+			Duration = 10;
+		})
