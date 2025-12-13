@@ -372,6 +372,8 @@ CreateFuncButton("Troll", function()
     SendNotification("Anonbound", "Trolling is in development", 3)
 end)
 
+
+
 -- [[ THEME DROPDOWN LOGIC ]] --
 local function CreateThemeDropdown()
     local DropdownContainer = Instance.new("Frame")
@@ -769,6 +771,10 @@ end)
 
 -- Initial Open
 toggleMenu()
+
+CreateFuncButton("Exit", function()
+toggleMenu()
+end)
 
 -- 30 Seconds Duration
 SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Press [Home] to toggle.", 30)
