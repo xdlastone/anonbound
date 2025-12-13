@@ -3,9 +3,9 @@ local playerGui = player:WaitForChild("PlayerGui")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting") -- Добавили сервис Lighting
+local Lighting = game:GetService("Lighting")
 
--- Configuration: Colors
+-- [[ CONFIGURATION: COLORS ]] --
 local C_BG       = Color3.fromHex("#14141e") 
 local C_HEADER   = Color3.fromHex("#1c1c2b") 
 local C_ACCENT   = Color3.fromHex("#c72d80") 
@@ -13,20 +13,138 @@ local C_TEXT     = Color3.fromHex("#ffffff")
 local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
 local C_STROKE   = Color3.fromHex("#2d2d3d") 
 local C_CARD_BG  = Color3.fromHex("#1e1e29")
+local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35") -- Для градиента уведомлений
 
 -- [[ BLUR SETUP ]] --
 local blurEffect = Instance.new("BlurEffect")
 blurEffect.Name = "AnonboundBlur"
-blurEffect.Size = 0 -- Изначально выключен
+blurEffect.Size = 0 
 blurEffect.Parent = Lighting
 
--- Create Main ScreenGui
+-- [[ MAIN SCREEN GUI ]] --
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WakeUI"
 screenGui.ResetOnSpawn = false 
 screenGui.Parent = playerGui
 
--- Main Container (Body)
+-- ============================================================================
+-- [[ NOTIFICATION SYSTEM INTEGRATION ]]
+-- ============================================================================
+
+-- Контейнер для уведомлений (Справа сверху)
+local NotifHolder = Instance.new("Frame")
+NotifHolder.Name = "NotificationHolder"
+NotifHolder.Parent = screenGui -- Важно: крепим к ScreenGui, а не к MainFrame
+NotifHolder.BackgroundTransparency = 1
+NotifHolder.AnchorPoint = Vector2.new(1, 0) 
+NotifHolder.Position = UDim2.new(1, -20, 0, 20) 
+NotifHolder.Size = UDim2.new(0, 330, 0.8, 0) 
+
+local NotifList = Instance.new("UIListLayout")
+NotifList.Parent = NotifHolder
+NotifList.SortOrder = Enum.SortOrder.LayoutOrder
+NotifList.Padding = UDim.new(0, 10) 
+NotifList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+NotifList.VerticalAlignment = Enum.VerticalAlignment.Top
+
+-- Функция отправки уведомления
+local function SendNotification(title, text, duration)
+    duration = duration or 5
+    
+    local Container = Instance.new("Frame")
+    Container.Name = "NotifContainer"
+    Container.Parent = NotifHolder
+    Container.BackgroundTransparency = 1
+    Container.Size = UDim2.new(1, 0, 0, 55) 
+    
+    local Card = Instance.new("Frame")
+    Card.Name = "Card"
+    Card.Parent = Container
+    Card.BackgroundColor3 = Color3.new(1, 1, 1)
+    Card.Size = UDim2.new(1, 0, 1, 0)
+    Card.Position = UDim2.new(1.5, 0, 0, 0) 
+    
+    -- Градиент
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Rotation = 90
+    Gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, C_CARD_BG),
+        ColorSequenceKeypoint.new(1, C_CARD_GRADIENT_BOTTOM)
+    }
+    Gradient.Parent = Card
+
+    -- Скругление и обводка
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = Card
+    
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Color = C_STROKE
+    UIStroke.Thickness = 1.5
+    UIStroke.Parent = Card
+    
+    -- Акцентная линия
+    local AccentBar = Instance.new("Frame")
+    AccentBar.BackgroundColor3 = C_ACCENT
+    AccentBar.Size = UDim2.new(0, 4, 0, 40)
+    AccentBar.Position = UDim2.new(0, 0, 0.5, 0)
+    AccentBar.AnchorPoint = Vector2.new(0, 0.5)
+    AccentBar.BorderSizePixel = 0
+    AccentBar.Parent = Card
+    
+    local BarCorner = Instance.new("UICorner") 
+    BarCorner.CornerRadius = UDim.new(0, 4)
+    BarCorner.Parent = AccentBar
+    
+    -- Тексты
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Parent = Card
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Position = UDim2.new(0, 15, 0, 8)
+    TitleLabel.Size = UDim2.new(1, -20, 0, 20)
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = C_TEXT
+    TitleLabel.TextSize = 14
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.ZIndex = 2
+    
+    local TextLabel = Instance.new("TextLabel")
+    TextLabel.Parent = Card
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Position = UDim2.new(0, 15, 0, 28)
+    TextLabel.Size = UDim2.new(1, -20, 0, 35)
+    TextLabel.Font = Enum.Font.Gotham
+    TextLabel.Text = text
+    TextLabel.TextColor3 = C_TEXT_DIM
+    TextLabel.TextSize = 13 -- Чуть уменьшил для вместимости
+    TextLabel.TextWrapped = true
+    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel.TextYAlignment = Enum.TextYAlignment.Top
+    TextLabel.ZIndex = 2
+    
+    -- Анимация
+    local infoIn = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local infoOut = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    
+    local tweenIn = TweenService:Create(Card, infoIn, {Position = UDim2.new(0, 0, 0, 0)})
+    tweenIn:Play()
+    
+    task.spawn(function()
+        task.wait(duration) 
+        if Card and Card.Parent then
+            local tweenOut = TweenService:Create(Card, infoOut, {Position = UDim2.new(1.5, 0, 0, 0)})
+            tweenOut:Play()
+            tweenOut.Completed:Wait() 
+        end
+        if Container then Container:Destroy() end
+    end)
+end
+
+-- ============================================================================
+-- [[ MAIN INTERFACE BODY ]]
+-- ============================================================================
+
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 0, 0, 0) -- Старт с 0 для анимации
@@ -183,9 +301,7 @@ functBox.BorderSizePixel = 0
 functBox.Parent = mainFrame
 
 
---[[ 
-    SMOOTH DRAG SYSTEM 
-]]
+--[[ SMOOTH DRAG SYSTEM ]]
 local dragging, dragInput, dragStart, startPos
 local DRAG_SPEED = 0.15
 
@@ -218,9 +334,7 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 
---[[
-    SYSTEM: ANIMATION & DESTRUCT
-]]
+--[[ SYSTEM: ANIMATION & DESTRUCT ]]
 local isMenuOpen = false
 local isAnimating = false
 local OPEN_SIZE = UDim2.new(0, 900, 0, 600)
@@ -233,7 +347,7 @@ local function toggleMenu()
 
     if isMenuOpen then
         -- Close Animation (UI + Blur)
-        TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() -- Blur OFF
+        TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = CLOSED_SIZE})
         tween:Play()
         tween.Completed:Wait()
@@ -242,7 +356,7 @@ local function toggleMenu()
     else
         -- Open Animation (UI + Blur)
         if mainFrame then mainFrame.Visible = true end
-        TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() -- Blur ON (Size 24)
+        TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = OPEN_SIZE})
         tween:Play()
         isMenuOpen = true
@@ -256,38 +370,28 @@ local inputConnection
 inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end 
 
-    -- [HOME] -> Toggle (Анимация)
+    -- [HOME] -> Toggle
     if input.KeyCode == Enum.KeyCode.Home then
         toggleMenu()
 
-    -- [INSERT] -> Destroy (Удаление)
+    -- [INSERT] -> Uninject
     elseif input.KeyCode == Enum.KeyCode.Insert then
-        if screenGui then 
-            screenGui:Destroy() 
-        end
-        if blurEffect then
-            blurEffect:Destroy() -- Удаляем блюр при выгрузке
-        end
+        -- 1. Сначала уведомление
+        SendNotification("System", "Uninjecting software...", 3)
         
-        if inputConnection then
-            inputConnection:Disconnect()
-        end
-        
-        StarterGui:SetCore("SendNotification", {
-            Title = "Anonbound",
-            Text = "Software Uninjected",
-            Duration = 3
-        })
+        -- 2. Убираем обработчик ввода сразу, чтобы не нажать второй раз
+        if inputConnection then inputConnection:Disconnect() end
+
+        -- 3. Ждем секунду, чтобы увидеть уведомление, затем удаляем всё
+        task.delay(1, function()
+            if blurEffect then blurEffect:Destroy() end
+            if screenGui then screenGui:Destroy() end
+        end)
     end
 end)
 
 -- Initial Open
 toggleMenu()
 
--- Notification
-StarterGui:SetCore("SendNotification", {
-    Title = "Anonbound",
-    Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150", 
-    Text = "[HOME] to Toggle / [INSERT] to Uninject",
-    Duration = 5
-})
+-- Custom Notification at Start
+SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Press [Home] to toggle.", 5)
