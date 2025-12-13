@@ -6,19 +6,18 @@ local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
 
 -- [[ CONFIGURATION: COLORS ]] --
-local C_BG           = Color3.fromHex("#14141e") 
-local C_HEADER       = Color3.fromHex("#1c1c2b") 
-local C_ACCENT       = Color3.fromHex("#c72d80") 
-local C_TEXT         = Color3.fromHex("#ffffff") 
-local C_TEXT_DIM     = Color3.fromHex("#7e7e8c") 
-local C_STROKE       = Color3.fromHex("#2d2d3d") 
-local C_CARD_BG      = Color3.fromHex("#1e1e29")
+local C_BG          = Color3.fromHex("#14141e") 
+local C_HEADER      = Color3.fromHex("#1c1c2b") 
+local C_ACCENT      = Color3.fromHex("#c72d80") 
+local C_TEXT        = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM    = Color3.fromHex("#7e7e8c") 
+local C_STROKE      = Color3.fromHex("#2d2d3d") 
+local C_CARD_BG     = Color3.fromHex("#1e1e29")
 local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35") 
 
 -- [[ COLORS FOR BLOCKS ]] --
 local C_BLOCK_BG     = Color3.fromHex("#111119") 
 local C_BLOCK_HEADER = Color3.fromHex("#1a1a25") 
--- Новый цвет для градиента блока
 local C_BLOCK_GRADIENT_BOTTOM = Color3.fromHex("#1a1a25") 
 
 
@@ -172,6 +171,7 @@ headerFrame.Size = UDim2.new(1, 0, 0, 60)
 headerFrame.Position = UDim2.new(0, 0, 0, 0)
 headerFrame.BackgroundColor3 = C_HEADER
 headerFrame.BorderSizePixel = 0
+headerFrame.ZIndex = 10 -- Фон шапки
 headerFrame.Parent = mainFrame
 
 local headerCorner = Instance.new("UICorner")
@@ -183,56 +183,284 @@ headerPatch.Size = UDim2.new(1, 0, 0, 10)
 headerPatch.Position = UDim2.new(0, 0, 1, -10)
 headerPatch.BackgroundColor3 = C_HEADER
 headerPatch.BorderSizePixel = 0
+headerPatch.ZIndex = 10
 headerPatch.Parent = headerFrame
-
--- [[ DRAG STRIP ]] --
-local dragPill = Instance.new("Frame")
-dragPill.Name = "DragPill"
-dragPill.Size = UDim2.new(0, 40, 0, 4)
-dragPill.Position = UDim2.new(0.5, 0, 0, 8) 
-dragPill.AnchorPoint = Vector2.new(0.5, 0)
-dragPill.BackgroundColor3 = C_STROKE 
-dragPill.BorderSizePixel = 0
-dragPill.Parent = headerFrame
-
-local dragCorner = Instance.new("UICorner")
-dragCorner.CornerRadius = UDim.new(1, 0)
-dragCorner.Parent = dragPill
 
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0, 200, 1, 0)
-title.Position = UDim2.new(0, 45, 0, 0)
+title.Position = UDim2.new(0, 20, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Anonbound"
 title.TextColor3 = C_TEXT
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
 title.TextXAlignment = Enum.TextXAlignment.Left
+title.ZIndex = 12 -- ВАЖНО: Выше фона
 title.Parent = headerFrame
 
 -- Version
 local version = Instance.new("TextLabel")
 version.Size = UDim2.new(0, 100, 1, 0)
-version.Position = UDim2.new(0, 190, 0, 2)
+version.Position = UDim2.new(0, 150, 0, -7)
 version.BackgroundTransparency = 1
 version.Text = "Alpha [v1.0.0]"
 version.TextColor3 = C_TEXT_DIM
 version.Font = Enum.Font.GothamBold
 version.TextSize = 14
 version.TextXAlignment = Enum.TextXAlignment.Left
+version.ZIndex = 12 -- ВАЖНО: Выше фона
 version.Parent = headerFrame
 
--- Accent Element
-local accentBar = Instance.new("Frame")
-accentBar.Size = UDim2.new(0, 4, 0, 24)
-accentBar.Position = UDim2.new(0, 30, 0.5, -12)
-accentBar.BackgroundColor3 = C_ACCENT
-accentBar.BorderSizePixel = 0
-accentBar.Parent = headerFrame
-local accentCorner = Instance.new("UICorner")
-accentCorner.CornerRadius = UDim.new(0, 4)
-accentCorner.Parent = accentBar
+-- [[ FUNCTIONAL BUTTONS (CENTER) ]] --
+local navContainer = Instance.new("Frame")
+navContainer.Name = "NavContainer"
+navContainer.Size = UDim2.new(0, 520, 1, 0)
+navContainer.Position = UDim2.new(0.5, 0, 0, 0)
+navContainer.AnchorPoint = Vector2.new(0.5, 0)
+navContainer.BackgroundTransparency = 1
+navContainer.ZIndex = 11
+navContainer.Parent = headerFrame
+
+local navList = Instance.new("UIListLayout")
+navList.Parent = navContainer
+navList.FillDirection = Enum.FillDirection.Horizontal
+navList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+navList.VerticalAlignment = Enum.VerticalAlignment.Center
+navList.Padding = UDim.new(0, 10)
+
+-- [[ ИСПРАВЛЕННАЯ ФУНКЦИЯ КНОПОК (FIXED) ]] --
+local function CreateFuncButton(text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = text
+    btn.Parent = navContainer
+    btn.BackgroundColor3 = C_BG 
+    btn.Size = UDim2.new(0, 0, 0, 32) 
+    btn.AutomaticSize = Enum.AutomaticSize.X 
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = text
+    btn.TextSize = 12
+    btn.TextColor3 = C_TEXT_DIM
+    btn.AutoButtonColor = false -- Отключаем встроенную реакцию Роблокса
+    btn.ZIndex = 12
+    
+    local uic = Instance.new("UICorner")
+    uic.CornerRadius = UDim.new(0, 6)
+    uic.Parent = btn
+    
+    local uis = Instance.new("UIStroke")
+    uis.Color = C_STROKE
+    uis.Thickness = 1
+    uis.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    uis.Parent = btn
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingRight = UDim.new(0, 12)
+    padding.Parent = btn
+
+    -- == ЛОГИКА АНИМАЦИИ ==
+    local isHovered = false
+    local activeTweens = {} -- Таблица для хранения текущих анимаций этой кнопки
+
+    -- Функция для отмены всех старых анимаций
+    local function cleanup()
+        for _, t in pairs(activeTweens) do
+            if t then t:Cancel() end
+        end
+        activeTweens = {}
+    end
+
+    -- Единая функция запуска анимации
+    local function animate(textColor, bgColor, strokeColor)
+        cleanup() -- Сначала жестко останавливаем всё, что двигалось до этого
+
+        local t1 = TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = textColor, BackgroundColor3 = bgColor})
+        local t2 = TweenService:Create(uis, TweenInfo.new(0.2), {Color = strokeColor})
+        
+        table.insert(activeTweens, t1)
+        table.insert(activeTweens, t2)
+        
+        t1:Play()
+        t2:Play()
+    end
+
+    btn.MouseEnter:Connect(function()
+        isHovered = true
+        animate(C_TEXT, C_BLOCK_HEADER, C_ACCENT)
+    end)
+
+    btn.MouseLeave:Connect(function()
+        isHovered = false
+        -- Добавляем микро-задержку. Если вы дернули мышкой, скрипт проверит состояние через 0.05 сек.
+        -- Если курсор всё ещё не на кнопке — тогда и только тогда запускаем анимацию ухода.
+        task.delay(0.05, function()
+            if not isHovered then
+                animate(C_TEXT_DIM, C_BG, C_STROKE)
+            end
+        end)
+    end)
+    
+    btn.MouseButton1Click:Connect(function()
+         cleanup()
+         -- Мгновенный эффект нажатия
+         TweenService:Create(btn, TweenInfo.new(0.05), {TextColor3 = C_ACCENT, BackgroundColor3 = C_HEADER}):Play()
+         task.wait(0.05)
+         
+         -- Возвращаем состояние в зависимости от того, где сейчас мышь
+         if isHovered then
+             animate(C_TEXT, C_BLOCK_HEADER, C_ACCENT)
+         else
+             animate(C_TEXT_DIM, C_BG, C_STROKE)
+         end
+         
+         if callback then callback() end
+    end)
+end
+
+
+CreateFuncButton("AA Settings", function()
+    SendNotification("Action", "Anti-aim is in development", 3)
+end)
+
+CreateFuncButton("Client Settings", function()
+    SendNotification("Action", "Client settings is in development", 3)
+end)
+
+CreateFuncButton("Executor", function()
+    SendNotification("Anonbound", "Executor is in development", 3)
+end)
+
+-- [[ THEME DROPDOWN LOGIC (FIXED) ]] --
+local function CreateThemeDropdown()
+    local DropdownContainer = Instance.new("Frame")
+    DropdownContainer.Name = "ThemeDropdown"
+    DropdownContainer.Parent = navContainer
+    DropdownContainer.BackgroundColor3 = Color3.new(1, 1, 1)
+    DropdownContainer.BackgroundTransparency = 1
+    DropdownContainer.Size = UDim2.new(0, 90, 0, 32)
+    DropdownContainer.ZIndex = 20 
+
+    local DropBtn = Instance.new("TextButton")
+    DropBtn.Name = "DropBtn"
+    DropBtn.Parent = DropdownContainer
+    DropBtn.BackgroundColor3 = C_BG
+    DropBtn.Size = UDim2.new(1, 0, 1, 0)
+    DropBtn.Font = Enum.Font.GothamBold
+    DropBtn.Text = "Themes"
+    DropBtn.TextSize = 12
+    DropBtn.TextColor3 = C_TEXT_DIM
+    DropBtn.AutoButtonColor = false
+    DropBtn.ZIndex = 21
+
+    local uic = Instance.new("UICorner")
+    uic.CornerRadius = UDim.new(0, 6)
+    uic.Parent = DropBtn
+
+    local uis = Instance.new("UIStroke")
+    uis.Color = C_STROKE
+    uis.Thickness = 1
+    uis.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    uis.Parent = DropBtn
+
+    local ListFrame = Instance.new("Frame")
+    ListFrame.Name = "ListFrame"
+    ListFrame.Parent = DropdownContainer
+    ListFrame.BackgroundColor3 = C_BLOCK_BG
+    ListFrame.Size = UDim2.new(1, 0, 0, 0)
+    ListFrame.Position = UDim2.new(0, 0, 1, 5)
+    ListFrame.ClipsDescendants = true
+    ListFrame.BorderSizePixel = 0
+    ListFrame.ZIndex = 20
+    
+    local ListCorner = Instance.new("UICorner")
+    ListCorner.CornerRadius = UDim.new(0, 6)
+    ListCorner.Parent = ListFrame
+    
+    local ListStroke = Instance.new("UIStroke")
+    ListStroke.Color = C_STROKE
+    ListStroke.Thickness = 1
+    ListStroke.Parent = ListFrame
+
+    local UIList = Instance.new("UIListLayout")
+    UIList.Parent = ListFrame
+    UIList.SortOrder = Enum.SortOrder.LayoutOrder
+    UIList.Padding = UDim.new(0, 2)
+    UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    
+    local ListPadding = Instance.new("UIPadding")
+    ListPadding.PaddingTop = UDim.new(0, 5)
+    ListPadding.Parent = ListFrame
+
+    local function AddThemeOption(name, colorHex)
+        local OptBtn = Instance.new("TextButton")
+        OptBtn.Name = name
+        OptBtn.Parent = ListFrame
+        OptBtn.BackgroundTransparency = 1
+        OptBtn.Size = UDim2.new(0.9, 0, 0, 25)
+        OptBtn.Font = Enum.Font.GothamMedium
+        OptBtn.Text = name
+        OptBtn.TextColor3 = C_TEXT_DIM
+        OptBtn.TextSize = 11
+        OptBtn.ZIndex = 22
+
+        OptBtn.MouseEnter:Connect(function()
+            TweenService:Create(OptBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromHex(colorHex)}):Play()
+        end)
+
+        OptBtn.MouseLeave:Connect(function()
+            TweenService:Create(OptBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play()
+        end)
+
+        OptBtn.MouseButton1Click:Connect(function()
+            SendNotification("Themes", "(Sorry, themes is in development) Selected: " .. name, 2)
+        end)
+    end
+
+    AddThemeOption("Default", "#c72d80")
+
+    local isHovering = false
+    local currentBtnTween = nil 
+    local currentStrokeTween = nil 
+
+    local function PlayTween(object, goals, duration, style, dir)
+        local tInfo = TweenInfo.new(duration or 0.2, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out)
+        local tween = TweenService:Create(object, tInfo, goals)
+        tween:Play()
+        return tween
+    end
+
+    local function OpenMenu()
+        isHovering = true
+        if currentBtnTween then currentBtnTween:Cancel() end
+        if currentStrokeTween then currentStrokeTween:Cancel() end
+
+        currentBtnTween = PlayTween(DropBtn, {TextColor3 = C_TEXT, BackgroundColor3 = C_BLOCK_HEADER})
+        currentStrokeTween = PlayTween(uis, {Color = C_ACCENT})
+        PlayTween(ListFrame, {Size = UDim2.new(1, 0, 0, 115)}, 0.3, Enum.EasingStyle.Quart)
+    end
+
+    local function CloseMenu()
+        isHovering = false
+        task.delay(0.05, function() 
+            if not isHovering then
+                if currentBtnTween then currentBtnTween:Cancel() end
+                if currentStrokeTween then currentStrokeTween:Cancel() end
+
+                currentBtnTween = PlayTween(DropBtn, {TextColor3 = C_TEXT_DIM, BackgroundColor3 = C_BG})
+                currentStrokeTween = PlayTween(uis, {Color = C_STROKE})
+                PlayTween(ListFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            end
+        end)
+    end
+
+    DropdownContainer.MouseEnter:Connect(OpenMenu)
+    DropdownContainer.MouseLeave:Connect(CloseMenu)
+    ListFrame.MouseEnter:Connect(function() isHovering = true end)
+    ListFrame.MouseLeave:Connect(CloseMenu)
+end
+
+CreateThemeDropdown()
 
 -- [[ USER PROFILE ]] --
 local profileContainer = Instance.new("Frame")
@@ -242,14 +470,15 @@ profileContainer.AnchorPoint = Vector2.new(1, 0.5)
 profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
 profileContainer.BackgroundColor3 = C_BG 
 profileContainer.BorderSizePixel = 0
+profileContainer.ZIndex = 12 -- ВАЖНО: Выше фона
 profileContainer.Parent = headerFrame
 
 local profileCorner = Instance.new("UICorner")
-profileCorner.CornerRadius = UDim.new(0.2, 0)
+profileCorner.CornerRadius = UDim.new(0, 6) 
 profileCorner.Parent = profileContainer
 
 local profileStroke = Instance.new("UIStroke")
-profileStroke.Color = C_STROKE
+profileStroke.Color = C_STROKE 
 profileStroke.Thickness = 1
 profileStroke.Parent = profileContainer
 
@@ -261,6 +490,7 @@ avatarImage.AnchorPoint = Vector2.new(0, 0.5)
 avatarImage.BackgroundColor3 = C_CARD_BG
 avatarImage.BackgroundTransparency = 1
 avatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=150&h=150"
+avatarImage.ZIndex = 13 -- ВАЖНО: Поверх контейнера
 avatarImage.Parent = profileContainer
 
 local avatarCorner = Instance.new("UICorner")
@@ -277,6 +507,7 @@ nameLabel.TextColor3 = C_TEXT
 nameLabel.Font = Enum.Font.GothamMedium
 nameLabel.TextSize = 13
 nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.ZIndex = 13 -- ВАЖНО: Поверх контейнера
 nameLabel.Parent = profileContainer
 
 -- [[ LINES (Separators) ]] --
@@ -302,7 +533,7 @@ line3.BorderSizePixel = 0
 line3.Parent = mainFrame
 
 -- ============================================================================
--- [[ HELPER: CONTENT BLOCK CREATOR (INCLINED GRADIENT) ]]
+-- [[ HELPER: CONTENT BLOCK CREATOR ]]
 -- ============================================================================
 local function CreateContentBlock(parent, name, position, size, title)
     -- Main Container
@@ -317,14 +548,13 @@ local function CreateContentBlock(parent, name, position, size, title)
     
     -- [[ GRADIENT ]] --
     local Gradient = Instance.new("UIGradient")
-    Gradient.Rotation = 45 -- Наклон 45 градусов (влево/вверх)
+    Gradient.Rotation = 45 
     Gradient.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, C_BLOCK_BG),              
         ColorSequenceKeypoint.new(1, C_BLOCK_GRADIENT_BOTTOM)  
     }
     Gradient.Parent = Block
     
-    -- Block Rounding (10px)
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 10)
     Corner.Parent = Block
@@ -337,7 +567,6 @@ local function CreateContentBlock(parent, name, position, size, title)
     BlockHead.Size = UDim2.new(1, 0, 0, 32)
     BlockHead.BorderSizePixel = 0
     
-    -- Header Rounding
     local HeaderCorner = Instance.new("UICorner")
     HeaderCorner.CornerRadius = UDim.new(0, 10)
     HeaderCorner.Parent = BlockHead
