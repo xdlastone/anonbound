@@ -191,26 +191,13 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0, 200, 1, 0)
 title.Position = UDim2.new(0, 20, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Anonbound"
+title.Text = "ANONBOUND"
 title.TextColor3 = C_TEXT
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.ZIndex = 12 -- ВАЖНО: Выше фона
 title.Parent = headerFrame
-
--- Version
-local version = Instance.new("TextLabel")
-version.Size = UDim2.new(0, 100, 1, 0)
-version.Position = UDim2.new(0, 150, 0, -7)
-version.BackgroundTransparency = 1
-version.Text = "Alpha [v1.0.0]"
-version.TextColor3 = C_TEXT_DIM
-version.Font = Enum.Font.GothamBold
-version.TextSize = 14
-version.TextXAlignment = Enum.TextXAlignment.Left
-version.ZIndex = 12 -- ВАЖНО: Выше фона
-version.Parent = headerFrame
 
 -- [[ FUNCTIONAL BUTTONS (CENTER) ]] --
 local navContainer = Instance.new("Frame")
