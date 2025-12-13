@@ -150,7 +150,7 @@ local connection = RunService.RenderStepped:Connect(function(deltaTime)
         
         -- Обновляем текст
         local formattedText = string.format(
-            '<font color="#%s"><b>ANONBOUND</b></font>  <font color="#%s">|</font>  %s  <font color="#%s">|</font>  fps: %d  <font color="#%s">|</font>  ping: %dms <font color="#%s">|</font> UID: 1337',
+            '<font color="#%s"><b>ANONBOUND</b></font>  <font color="#%s">|</font>  %s  <font color="#%s">|</font>  fps: %d  <font color="#%s">|</font>  ping: %dms',
             C_ACCENT:ToHex(),
             C_TEXT_DIM:ToHex(),
             name,
@@ -162,7 +162,7 @@ local connection = RunService.RenderStepped:Connect(function(deltaTime)
         Label.Text = formattedText
         
         -- === 4. Стабилизация размера (Тоже раз в секунду) ===
-        local rawText = "ANONBOUND  |  " .. name .. "  |  fps: " .. fps .. "  |  ping: " .. ping .. "ms"
+        local rawText = "ANONBOUND  |  " .. name .. "  |  fps: " .. fps .. "  |  ping: " .. ping .. "ms  |  UID: 1337"
         local textSize = TextService:GetTextSize(rawText, 16, Enum.Font.GothamMedium, Vector2.new(2000, 38))
         local targetWidth = textSize.X + 28
         
