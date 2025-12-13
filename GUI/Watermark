@@ -1,14 +1,20 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui") 
+-- [[ 1. Создаем GUI ]] --
+local Watermark = Instance.new("ScreenGui")
+Watermark.Name = "MyWatermark" -- Важно дать имя
+Watermark.Parent = game.CoreGui
+Watermark.IgnoreGuiInset = true
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local Label = Instance.new("TextLabel")
+Label.Parent = Watermark
+Label.Text = "ANONBOUND | USER"
+Label.Size = UDim2.new(0, 200, 0, 30)
+Label.Position = UDim2.new(0, 50, 0, 50)
+Label.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Label.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-StarterGui:SetCore("SendNotification", {
-			Title = "Anonbound [loader]";
-			Text = "Join to our telegram channel! (t.me/anonbound1337)";
-			Duration = 10;
-		})
+-- [[ 2. ВАЖНАЯ ЧАСТЬ ]] --
+-- Мы возвращаем функцию. 
+-- Когда чит выключит кнопку, он запустит эту функцию, и она удалит GUI.
+return function()
+    Watermark:Destroy()
+end
