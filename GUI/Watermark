@@ -15,6 +15,7 @@ local TweenService = game:GetService("TweenService")
 local TextService = game:GetService("TextService")
 
 local GUI_NAME = "MyWatermark" 
+local MY_UID = "1337" -- UID
 
 -- 1. Setup ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
@@ -75,17 +76,17 @@ InnerGradient.Color = ColorSequence.new{
 }
 InnerGradient.Parent = InnerFrame
 
--- 4. Text Label
+-- 4. Text Label (ИЗМЕНЕНИЯ ЗДЕСЬ)
 local Label = Instance.new("TextLabel")
 Label.Parent = InnerFrame
 Label.BackgroundTransparency = 1
-Label.Position = UDim2.new(0, 12, 0, 0)
-Label.Size = UDim2.new(0, 0, 1, 0)
+Label.Position = UDim2.new(0, 0, 0, 0) -- Убрали отступы (было 15)
+Label.Size = UDim2.new(1, 0, 1, 0)     -- Растянули на всю ширину
 Label.Font = Enum.Font.GothamMedium
-Label.TextSize = 16 
+Label.TextSize = 15 
 Label.TextColor3 = C_TEXT
 Label.RichText = true
-Label.TextXAlignment = Enum.TextXAlignment.Left
+Label.TextXAlignment = Enum.TextXAlignment.Center -- Центровка текста
 
 -- 5. Drag Logic
 local dragging, dragInput, dragStart, startPos
@@ -119,15 +120,13 @@ end)
 local currentWidth = 0
 local name = Players.LocalPlayer and Players.LocalPlayer.Name or "User"
 
--- Переменные для таймера 1 секунды
 local timeElapsed = 0
 local frameCount = 0
 
 local connection = RunService.RenderStepped:Connect(function(deltaTime)
     if not BorderFrame.Parent then return end
     
-    -- === 1. Анимация (Каждый кадр) ===
-    -- Чтобы водопад был плавным, он должен обновляться всегда
+    -- === 1. Анимация ===
     local time = os.clock()
     local speed = 0.6
     local offset = math.fmod(time * speed, 2) - 1 
@@ -137,36 +136,37 @@ local connection = RunService.RenderStepped:Connect(function(deltaTime)
     timeElapsed = timeElapsed + deltaTime
     frameCount = frameCount + 1
     
-    -- === 3. Обновление Текста (Раз в 1 секунду) ===
+    -- === 3. Обновление Текста ===
     if timeElapsed >= 1 then
-        -- Вычисляем средний FPS за прошедшую секунду
         local fps = math.floor(frameCount / timeElapsed)
         
-        -- Получаем Пинг
         local ping = 0
         pcall(function()
             ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValueString():match("%d+"))
         end)
         
-        -- Обновляем текст
         local formattedText = string.format(
-            '<font color="#%s"><b>ANONBOUND</b></font>  <font color="#%s">|</font>  %s  <font color="#%s">|</font>  fps: %d  <font color="#%s">|</font>  ping: %dms',
+            '<font color="#%s"><b>ANONBOUND</b></font>  <font color="#%s">|</font>  %s  <font color="#%s">|</font>  fps: %d  <font color="#%s">|</font>  ping: %dms  <font color="#%s">|</font>  uid: <font color="#%s">%s</font>',
             C_ACCENT:ToHex(),
             C_TEXT_DIM:ToHex(),
             name,
             C_TEXT_DIM:ToHex(),
             fps,
             C_TEXT_DIM:ToHex(),
-            ping
+            ping,
+            C_TEXT_DIM:ToHex(),
+            C_ACCENT:ToHex(),
+            MY_UID
         )
         Label.Text = formattedText
         
-        -- === 4. Стабилизация размера (Тоже раз в секунду) ===
-        local rawText = "ANONBOUND  |  " .. name .. "  |  fps: " .. fps .. "  |  ping: " .. ping .. "ms  |  UID: 1337"
-        local textSize = TextService:GetTextSize(rawText, 16, Enum.Font.GothamMedium, Vector2.new(2000, 38))
-        local targetWidth = textSize.X + 28
+        -- === 4. Стабилизация размера ===
+        local rawText = "ANONBOUND  |  " .. name .. "  |  fps: " .. fps .. "  |  ping: " .. ping .. "ms  |  uid: " .. MY_UID
+        local textSize = TextService:GetTextSize(rawText, 15, Enum.Font.GothamMedium, Vector2.new(2000, 38))
         
-        -- Меняем размер, если разница > 2 пикселей
+        -- Паддинг 50 обеспечивает отступы по 25 пикселей с каждой стороны
+        local targetWidth = textSize.X + 50
+        
         if math.abs(targetWidth - currentWidth) > 2 then
             currentWidth = targetWidth
             TweenService:Create(BorderFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
@@ -174,7 +174,6 @@ local connection = RunService.RenderStepped:Connect(function(deltaTime)
             }):Play()
         end
         
-        -- Сброс таймеров
         frameCount = 0
         timeElapsed = 0
     end
