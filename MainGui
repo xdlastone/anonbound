@@ -331,6 +331,10 @@ CreateFuncButton("Executor", function()
     SendNotification("Anonbound", "Executor is in development", 3)
 end)
 
+CreateFuncButton("Troll", function()
+    SendNotification("Anonbound", "Trolling is in development", 3)
+end)
+
 -- [[ THEME DROPDOWN LOGIC (FIXED) ]] --
 local function CreateThemeDropdown()
     local DropdownContainer = Instance.new("Frame")
