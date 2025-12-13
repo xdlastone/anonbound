@@ -220,21 +220,20 @@ local function EnableFatalityGlitch(mainTitle)
     ghostRed.Parent = mainTitle.Parent
     ghostRed.TextColor3 = ColorRed
     ghostRed.ZIndex = 13
-    ghostRed.TextTransparency = 0.25 -- Уменьшил прозрачность (стал ярче)
+    ghostRed.TextTransparency = 0.25 
     
     local ghostBlue = mainTitle:Clone()
     ghostBlue.Name = "GhostBlue"
     ghostBlue.Parent = mainTitle.Parent
     ghostBlue.TextColor3 = ColorBlue
     ghostBlue.ZIndex = 13
-    ghostBlue.TextTransparency = 0.25 -- Уменьшил прозрачность (стал ярче)
+    ghostBlue.TextTransparency = 0.25 
 
     local basePos = mainTitle.Position
     
     RunService.Heartbeat:Connect(function()
         if not mainTitle or not mainTitle.Parent then return end
 
-        -- Увеличен шанс сильного лага и его интенсивность
         local isSpike = math.random() > 0.85 
         local intensity = isSpike and 6 or 2.5 
         
@@ -246,7 +245,6 @@ local function EnableFatalityGlitch(mainTitle)
         ghostRed.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + offX_Red, basePos.Y.Scale, basePos.Y.Offset + offY_Red)
         ghostBlue.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset - offX_Blue, basePos.Y.Scale, basePos.Y.Offset - offY_Blue)
         
-        -- Более частое и агрессивное мерцание
         if math.random() > 0.9 then
             ghostRed.Visible = not ghostRed.Visible
         elseif math.random() > 0.9 then
@@ -720,10 +718,9 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 
---[[ SYSTEM: ANIMATION & DESTRUCT & MOUSE LOCK ]]
+--[[ SYSTEM: ANIMATION & DESTRUCT (NO CURSOR LOCK) ]]
 local isMenuOpen = false
 local isAnimating = false
-local mouseLoop = nil -- Переменная для хранения цикла разблокировки курсора
 
 local OPEN_SIZE = UDim2.new(0, 900, 0, 600)
 local CLOSED_SIZE = UDim2.new(0, 0, 0, 0)
@@ -734,15 +731,6 @@ local function toggleMenu()
 
     if isMenuOpen then
         -- CLOSING
-        -- Отключаем принудительную разблокировку курсора
-        if mouseLoop then
-            mouseLoop:Disconnect()
-            mouseLoop = nil
-        end
-        -- Возвращаем контроль игре
-        UIS.MouseIconEnabled = false
-        UIS.MouseBehavior = Enum.MouseBehavior.LockCenter
-        
         TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = CLOSED_SIZE})
         tween:Play()
@@ -752,14 +740,6 @@ local function toggleMenu()
     else
         -- OPENING
         if mainFrame then mainFrame.Visible = true end
-        
-        -- Включаем цикл принудительного показа курсора (перебивает шутеры)
-        if not mouseLoop then
-            mouseLoop = RunService.RenderStepped:Connect(function()
-                UIS.MouseIconEnabled = true
-                UIS.MouseBehavior = Enum.MouseBehavior.Default
-            end)
-        end
         
         TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = OPEN_SIZE})
@@ -780,7 +760,6 @@ inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Enum.KeyCode.Insert then
         SendNotification("System", "Uninjecting software...", 3)
         if inputConnection then inputConnection:Disconnect() end
-        if mouseLoop then mouseLoop:Disconnect() end -- Очистка курсора при выходе
         task.delay(1, function()
             if blurEffect then blurEffect:Destroy() end
             if screenGui then screenGui:Destroy() end
