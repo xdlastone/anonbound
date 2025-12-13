@@ -6,14 +6,21 @@ local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
 
 -- [[ CONFIGURATION: COLORS ]] --
-local C_BG       = Color3.fromHex("#14141e") 
-local C_HEADER   = Color3.fromHex("#1c1c2b") 
-local C_ACCENT   = Color3.fromHex("#c72d80") 
-local C_TEXT     = Color3.fromHex("#ffffff") 
-local C_TEXT_DIM = Color3.fromHex("#7e7e8c") 
-local C_STROKE   = Color3.fromHex("#2d2d3d") 
-local C_CARD_BG  = Color3.fromHex("#1e1e29")
-local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35") -- Для градиента уведомлений
+local C_BG           = Color3.fromHex("#14141e") 
+local C_HEADER       = Color3.fromHex("#1c1c2b") 
+local C_ACCENT       = Color3.fromHex("#c72d80") 
+local C_TEXT         = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM     = Color3.fromHex("#7e7e8c") 
+local C_STROKE       = Color3.fromHex("#2d2d3d") 
+local C_CARD_BG      = Color3.fromHex("#1e1e29")
+local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35") 
+
+-- [[ COLORS FOR BLOCKS ]] --
+local C_BLOCK_BG     = Color3.fromHex("#111119") 
+local C_BLOCK_HEADER = Color3.fromHex("#1a1a25") 
+-- Новый цвет для градиента блока
+local C_BLOCK_GRADIENT_BOTTOM = Color3.fromHex("#1a1a25") 
+
 
 -- [[ BLUR SETUP ]] --
 local blurEffect = Instance.new("BlurEffect")
@@ -28,13 +35,12 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 -- ============================================================================
--- [[ NOTIFICATION SYSTEM INTEGRATION ]]
+-- [[ NOTIFICATION SYSTEM ]]
 -- ============================================================================
 
--- Контейнер для уведомлений (Справа сверху)
 local NotifHolder = Instance.new("Frame")
 NotifHolder.Name = "NotificationHolder"
-NotifHolder.Parent = screenGui -- Важно: крепим к ScreenGui, а не к MainFrame
+NotifHolder.Parent = screenGui 
 NotifHolder.BackgroundTransparency = 1
 NotifHolder.AnchorPoint = Vector2.new(1, 0) 
 NotifHolder.Position = UDim2.new(1, -20, 0, 20) 
@@ -47,7 +53,6 @@ NotifList.Padding = UDim.new(0, 10)
 NotifList.HorizontalAlignment = Enum.HorizontalAlignment.Right
 NotifList.VerticalAlignment = Enum.VerticalAlignment.Top
 
--- Функция отправки уведомления
 local function SendNotification(title, text, duration)
     duration = duration or 5
     
@@ -64,7 +69,6 @@ local function SendNotification(title, text, duration)
     Card.Size = UDim2.new(1, 0, 1, 0)
     Card.Position = UDim2.new(1.5, 0, 0, 0) 
     
-    -- Градиент
     local Gradient = Instance.new("UIGradient")
     Gradient.Rotation = 90
     Gradient.Color = ColorSequence.new{
@@ -73,7 +77,6 @@ local function SendNotification(title, text, duration)
     }
     Gradient.Parent = Card
 
-    -- Скругление и обводка
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 8)
     UICorner.Parent = Card
@@ -83,7 +86,6 @@ local function SendNotification(title, text, duration)
     UIStroke.Thickness = 1.5
     UIStroke.Parent = Card
     
-    -- Акцентная линия
     local AccentBar = Instance.new("Frame")
     AccentBar.BackgroundColor3 = C_ACCENT
     AccentBar.Size = UDim2.new(0, 4, 0, 40)
@@ -96,7 +98,6 @@ local function SendNotification(title, text, duration)
     BarCorner.CornerRadius = UDim.new(0, 4)
     BarCorner.Parent = AccentBar
     
-    -- Тексты
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Parent = Card
     TitleLabel.BackgroundTransparency = 1
@@ -117,13 +118,12 @@ local function SendNotification(title, text, duration)
     TextLabel.Font = Enum.Font.Gotham
     TextLabel.Text = text
     TextLabel.TextColor3 = C_TEXT_DIM
-    TextLabel.TextSize = 13 -- Чуть уменьшил для вместимости
+    TextLabel.TextSize = 13 
     TextLabel.TextWrapped = true
     TextLabel.TextXAlignment = Enum.TextXAlignment.Left
     TextLabel.TextYAlignment = Enum.TextYAlignment.Top
     TextLabel.ZIndex = 2
     
-    -- Анимация
     local infoIn = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local infoOut = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
     
@@ -147,7 +147,7 @@ end
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 0, 0, 0) -- Старт с 0 для анимации
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.BackgroundColor3 = C_BG
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -156,7 +156,6 @@ mainFrame.ClipsDescendants = true
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
--- Add Stroke (Outline)
 local mainStroke = Instance.new("UIStroke")
 mainStroke.Color = C_STROKE
 mainStroke.Thickness = 1
@@ -186,6 +185,20 @@ headerPatch.BackgroundColor3 = C_HEADER
 headerPatch.BorderSizePixel = 0
 headerPatch.Parent = headerFrame
 
+-- [[ DRAG STRIP ]] --
+local dragPill = Instance.new("Frame")
+dragPill.Name = "DragPill"
+dragPill.Size = UDim2.new(0, 40, 0, 4)
+dragPill.Position = UDim2.new(0.5, 0, 0, 8) 
+dragPill.AnchorPoint = Vector2.new(0.5, 0)
+dragPill.BackgroundColor3 = C_STROKE 
+dragPill.BorderSizePixel = 0
+dragPill.Parent = headerFrame
+
+local dragCorner = Instance.new("UICorner")
+dragCorner.CornerRadius = UDim.new(1, 0)
+dragCorner.Parent = dragPill
+
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0, 200, 1, 0)
@@ -210,7 +223,7 @@ version.TextSize = 14
 version.TextXAlignment = Enum.TextXAlignment.Left
 version.Parent = headerFrame
 
--- Custom Accent Element
+-- Accent Element
 local accentBar = Instance.new("Frame")
 accentBar.Size = UDim2.new(0, 4, 0, 24)
 accentBar.Position = UDim2.new(0, 30, 0.5, -12)
@@ -221,7 +234,7 @@ local accentCorner = Instance.new("UICorner")
 accentCorner.CornerRadius = UDim.new(0, 4)
 accentCorner.Parent = accentBar
 
--- [[ USER PROFILE (RIGHT HEADER) ]] --
+-- [[ USER PROFILE ]] --
 local profileContainer = Instance.new("Frame")
 profileContainer.Name = "UserProfile"
 profileContainer.Size = UDim2.new(0, 135, 0, 36)
@@ -240,7 +253,6 @@ profileStroke.Color = C_STROKE
 profileStroke.Thickness = 1
 profileStroke.Parent = profileContainer
 
--- Avatar
 local avatarImage = Instance.new("ImageLabel")
 avatarImage.Name = "Avatar"
 avatarImage.Size = UDim2.new(0, 28, 0, 28)
@@ -255,7 +267,6 @@ local avatarCorner = Instance.new("UICorner")
 avatarCorner.CornerRadius = UDim.new(1, 0)
 avatarCorner.Parent = avatarImage
 
--- Username
 local nameLabel = Instance.new("TextLabel")
 nameLabel.Name = "Username"
 nameLabel.Size = UDim2.new(1, -40, 1, 0)
@@ -268,37 +279,141 @@ nameLabel.TextSize = 13
 nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 nameLabel.Parent = profileContainer
 
-
--- [[ LINES & BODY ]] --
-local line2 = Instance.new("Frame")
+-- [[ LINES (Separators) ]] --
+local line2 = Instance.new("Frame") 
 line2.Size = UDim2.new(1, 0, 0, 1)
 line2.Position = UDim2.new(0, 0, 0, 60)
 line2.BackgroundColor3 = C_STROKE
 line2.BorderSizePixel = 0
 line2.Parent = mainFrame
 
-local line = Instance.new("Frame")
+local line = Instance.new("Frame") 
 line.Size = UDim2.new(0, 1, 1, -60)
-line.Position = UDim2.new(0, 240, 0, 60)
+line.Position = UDim2.new(0, 300, 0, 60)
 line.BackgroundColor3 = C_STROKE
 line.BorderSizePixel = 0
 line.Parent = mainFrame
 
-local line3 = Instance.new("Frame")
+local line3 = Instance.new("Frame") 
 line3.Size = UDim2.new(0, 1, 1, -60)
-line3.Position = UDim2.new(0, 482, 0, 60)
+line3.Position = UDim2.new(0, 600, 0, 60)
 line3.BackgroundColor3 = C_STROKE
 line3.BorderSizePixel = 0
 line3.Parent = mainFrame
 
--- Function Box
-local functBox = Instance.new("Frame")
-functBox.Size = UDim2.new(0, 240, 1, -60)
-functBox.Position = UDim2.new(0, 242, 0, 60)
-functBox.BackgroundColor3 = C_CARD_BG 
-functBox.BackgroundTransparency = 1 
-functBox.BorderSizePixel = 0
-functBox.Parent = mainFrame
+-- ============================================================================
+-- [[ HELPER: CONTENT BLOCK CREATOR (INCLINED GRADIENT) ]]
+-- ============================================================================
+local function CreateContentBlock(parent, name, position, size, title)
+    -- Main Container
+    local Block = Instance.new("Frame")
+    Block.Name = name
+    Block.Parent = parent
+    Block.BackgroundColor3 = Color3.new(1, 1, 1) 
+    Block.Position = position
+    Block.Size = size
+    Block.BorderSizePixel = 0
+    Block.ClipsDescendants = true 
+    
+    -- [[ GRADIENT ]] --
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Rotation = 45 -- Наклон 45 градусов (влево/вверх)
+    Gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, C_BLOCK_BG),              
+        ColorSequenceKeypoint.new(1, C_BLOCK_GRADIENT_BOTTOM)  
+    }
+    Gradient.Parent = Block
+    
+    -- Block Rounding (10px)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = Block
+    
+    -- Block Header
+    local BlockHead = Instance.new("Frame")
+    BlockHead.Name = "BlockHeader"
+    BlockHead.Parent = Block
+    BlockHead.BackgroundColor3 = C_BLOCK_HEADER 
+    BlockHead.Size = UDim2.new(1, 0, 0, 32)
+    BlockHead.BorderSizePixel = 0
+    
+    -- Header Rounding
+    local HeaderCorner = Instance.new("UICorner")
+    HeaderCorner.CornerRadius = UDim.new(0, 10)
+    HeaderCorner.Parent = BlockHead
+
+    local HeaderPatch = Instance.new("Frame")
+    HeaderPatch.Parent = BlockHead
+    HeaderPatch.BackgroundColor3 = C_BLOCK_HEADER
+    HeaderPatch.Size = UDim2.new(1, 0, 0, 5)
+    HeaderPatch.Position = UDim2.new(0, 0, 1, -5)
+    HeaderPatch.BorderSizePixel = 0
+    
+    -- Title
+    local HeadTitle = Instance.new("TextLabel")
+    HeadTitle.Parent = BlockHead
+    HeadTitle.Size = UDim2.new(1, 0, 1, 0) 
+    HeadTitle.Position = UDim2.new(0, 0, 0, 0)
+    HeadTitle.BackgroundTransparency = 1
+    HeadTitle.Text = title
+    HeadTitle.Font = Enum.Font.GothamBold
+    HeadTitle.TextSize = 13
+    HeadTitle.TextColor3 = C_TEXT 
+    HeadTitle.TextXAlignment = Enum.TextXAlignment.Center 
+    HeadTitle.ZIndex = 2
+    
+    -- Accent Line
+    local AccentLine = Instance.new("Frame")
+    AccentLine.Name = "AccentLine"
+    AccentLine.Parent = Block
+    AccentLine.BackgroundColor3 = C_STROKE 
+    AccentLine.Size = UDim2.new(1, 0, 0, 1) 
+    AccentLine.Position = UDim2.new(0, 0, 0, 32) 
+    AccentLine.BorderSizePixel = 0
+    AccentLine.ZIndex = 2
+    
+    -- Content Container
+    local Content = Instance.new("ScrollingFrame") 
+    Content.Name = "Content"
+    Content.Parent = Block
+    Content.BackgroundTransparency = 1
+    Content.Size = UDim2.new(1, 0, 1, -33) 
+    Content.Position = UDim2.new(0, 0, 0, 33) 
+    Content.BorderSizePixel = 0
+    Content.ScrollBarThickness = 3
+    Content.ScrollBarImageColor3 = C_ACCENT
+    
+    return Block, Content
+end
+
+
+-- ============================================================================
+-- [[ GENERATE BLOCKS ]]
+-- ============================================================================
+
+CreateContentBlock(
+    mainFrame, 
+    "LeftContainer", 
+    UDim2.new(0, 15, 0, 75), 
+    UDim2.new(0, 270, 1, -90), 
+    "Visuals"
+)
+
+CreateContentBlock(
+    mainFrame, 
+    "MiddleContainer", 
+    UDim2.new(0, 315, 0, 75), 
+    UDim2.new(0, 270, 1, -90), 
+    "Movement"
+)
+
+CreateContentBlock(
+    mainFrame, 
+    "RightContainer", 
+    UDim2.new(0, 615, 0, 75), 
+    UDim2.new(0, 270, 1, -90), 
+    "Features"
+)
 
 
 --[[ SMOOTH DRAG SYSTEM ]]
@@ -340,13 +455,12 @@ local isAnimating = false
 local OPEN_SIZE = UDim2.new(0, 900, 0, 600)
 local CLOSED_SIZE = UDim2.new(0, 0, 0, 0)
 
--- Функция анимации открытия/закрытия
 local function toggleMenu()
     if isAnimating or not mainFrame or not mainFrame.Parent then return end
     isAnimating = true
 
     if isMenuOpen then
-        -- Close Animation (UI + Blur)
+        -- Close
         TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = CLOSED_SIZE})
         tween:Play()
@@ -354,7 +468,7 @@ local function toggleMenu()
         if mainFrame then mainFrame.Visible = false end
         isMenuOpen = false
     else
-        -- Open Animation (UI + Blur)
+        -- Open
         if mainFrame then mainFrame.Visible = true end
         TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() 
         local tween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = OPEN_SIZE})
@@ -365,24 +479,16 @@ local function toggleMenu()
     isAnimating = false
 end
 
--- Обработчик клавиш
 local inputConnection
 inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end 
 
-    -- [HOME] -> Toggle
     if input.KeyCode == Enum.KeyCode.Home then
         toggleMenu()
 
-    -- [INSERT] -> Uninject
     elseif input.KeyCode == Enum.KeyCode.Insert then
-        -- 1. Сначала уведомление
         SendNotification("System", "Uninjecting software...", 3)
-        
-        -- 2. Убираем обработчик ввода сразу, чтобы не нажать второй раз
         if inputConnection then inputConnection:Disconnect() end
-
-        -- 3. Ждем секунду, чтобы увидеть уведомление, затем удаляем всё
         task.delay(1, function()
             if blurEffect then blurEffect:Destroy() end
             if screenGui then screenGui:Destroy() end
@@ -393,5 +499,5 @@ end)
 -- Initial Open
 toggleMenu()
 
--- Custom Notification at Start
-SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Press [Home] to toggle.", 5)
+-- 30 Seconds Duration
+SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Press [Home] to toggle.", 30)
