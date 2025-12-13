@@ -5,6 +5,7 @@ local UIS = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
 
 -- [[ CONFIGURATION: COLORS ]] --
 local C_BG          = Color3.fromHex("#14141e") 
@@ -20,7 +21,6 @@ local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35")
 local C_BLOCK_BG     = Color3.fromHex("#111119") 
 local C_BLOCK_HEADER = Color3.fromHex("#1a1a25") 
 local C_BLOCK_GRADIENT_BOTTOM = Color3.fromHex("#1a1a25") 
-
 
 -- [[ BLUR SETUP ]] --
 for _, child in pairs(Lighting:GetChildren()) do
@@ -258,7 +258,6 @@ end
 
 EnableFatalityGlitch(title)
 
-
 -- [[ FUNCTIONAL BUTTONS ]] --
 local navContainer = Instance.new("Frame")
 navContainer.Name = "NavContainer"
@@ -355,7 +354,6 @@ local function CreateFuncButton(text, callback)
     end)
 end
 
-
 CreateFuncButton("AA Settings", function()
     SendNotification("Action", "Anti-aim is in development", 3)
 end)
@@ -371,8 +369,6 @@ end)
 CreateFuncButton("Troll", function()
     SendNotification("Anonbound", "Trolling is in development", 3)
 end)
-
-
 
 -- [[ THEME DROPDOWN LOGIC ]] --
 local function CreateThemeDropdown()
@@ -654,37 +650,99 @@ local function CreateContentBlock(parent, name, position, size, title)
     Content.ScrollBarThickness = 3
     Content.ScrollBarImageColor3 = C_ACCENT
     
+    -- UI List Layout for features
+    local Layout = Instance.new("UIListLayout")
+    Layout.Parent = Content
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.Padding = UDim.new(0, 8)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingTop = UDim.new(0, 10)
+    Padding.Parent = Content
+    
     return Block, Content
 end
 
+-- ============================================================================
+-- [[ HELPER: ROUNDED TOGGLE FUNCTION ]]
+-- ============================================================================
+local function CreateFunctionToggle(parent, name, callback)
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Name = name
+    ToggleBtn.Parent = parent
+    ToggleBtn.BackgroundColor3 = C_BG
+    ToggleBtn.Size = UDim2.new(0.9, 0, 0, 35)
+    ToggleBtn.Font = Enum.Font.GothamMedium
+    ToggleBtn.Text = name
+    ToggleBtn.TextColor3 = C_TEXT_DIM
+    ToggleBtn.TextSize = 13
+    ToggleBtn.AutoButtonColor = false
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8) -- Rounded corners
+    Corner.Parent = ToggleBtn
+    
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = C_STROKE
+    Stroke.Thickness = 1.2
+    Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Stroke.Parent = ToggleBtn
+    
+    local Status = Instance.new("Frame")
+    Status.Name = "Status"
+    Status.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    Status.Size = UDim2.new(0, 8, 0, 8)
+    Status.Position = UDim2.new(1, -20, 0.5, 0)
+    Status.AnchorPoint = Vector2.new(0, 0.5)
+    Status.Parent = ToggleBtn
+    
+    local StatusCorner = Instance.new("UICorner")
+    StatusCorner.CornerRadius = UDim.new(1, 0)
+    StatusCorner.Parent = Status
+
+    local toggled = false
+    
+    -- Hover Logic (Accent Stroke)
+    ToggleBtn.MouseEnter:Connect(function()
+        TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = C_ACCENT}):Play()
+        if not toggled then
+             TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT}):Play()
+        end
+    end)
+    
+    ToggleBtn.MouseLeave:Connect(function()
+        TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = C_STROKE}):Play()
+         if not toggled then
+             TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play()
+        end
+    end)
+    
+    -- Click Logic
+    ToggleBtn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        
+        if toggled then
+            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_BLOCK_HEADER, TextColor3 = C_TEXT}):Play()
+            TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = C_ACCENT}):Play()
+            SendNotification("Toggle", name .. " Enabled", 1.5)
+        else
+            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_BG, TextColor3 = C_TEXT_DIM}):Play()
+            TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}):Play()
+            SendNotification("Toggle", name .. " Disabled", 1.5)
+        end
+        
+        if callback then callback(toggled) end
+    end)
+end
 
 -- ============================================================================
--- [[ GENERATE BLOCKS ]]
+-- [[ GENERATE BLOCKS (GUI LAYOUT) ]]
 -- ============================================================================
 
-CreateContentBlock(
-    mainFrame, 
-    "LeftContainer", 
-    UDim2.new(0, 15, 0, 75), 
-    UDim2.new(0, 270, 1, -90), 
-    "Visuals"
-)
-
-CreateContentBlock(
-    mainFrame, 
-    "MiddleContainer", 
-    UDim2.new(0, 315, 0, 75), 
-    UDim2.new(0, 270, 1, -90), 
-    "Movement"
-)
-
-CreateContentBlock(
-    mainFrame, 
-    "RightContainer", 
-    UDim2.new(0, 615, 0, 75), 
-    UDim2.new(0, 270, 1, -90), 
-    "Features"
-)
+local VisualsBlock, VisualsContent = CreateContentBlock(mainFrame, "LeftContainer", UDim2.new(0, 15, 0, 75), UDim2.new(0, 270, 1, -90), "Visuals")
+local MovementBlock, MovementContent = CreateContentBlock(mainFrame, "MiddleContainer", UDim2.new(0, 315, 0, 75), UDim2.new(0, 270, 1, -90), "Movement")
+local FeaturesBlock, FeaturesContent = CreateContentBlock(mainFrame, "RightContainer", UDim2.new(0, 615, 0, 75), UDim2.new(0, 270, 1, -90), "Features")
 
 
 --[[ SMOOTH DRAG SYSTEM ]]
@@ -779,3 +837,87 @@ end)
 -- 30 Seconds Duration
 SendNotification("Anonbound", "Welcome, " .. player.Name .. ".", 30)
 SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
+
+
+-- ============================================================================
+-- [[ GITHUB LOADER & LOGIC ]]
+-- ============================================================================
+
+-- 1. Helper to fetch raw code (DOES NOT RUN IMMEDIATELY)
+local function GetRawCode(url)
+    if url == "" then return nil end
+    local success, result = pcall(function()
+        return game:HttpGet(url)
+    end)
+    if success then
+        return result
+    else
+        warn("Failed to fetch script: " .. url)
+        return nil
+    end
+end
+
+-- 2. PASTE YOUR GITHUB LINKS HERE
+local LINKS = {
+    Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark", -- Your Watermark Link here
+    SpeedHack   = "", 
+    AntiAFK = "" 
+}
+
+local Watermark_Code= GetRawCode(LINKS.Watermark)
+local Speed_Code    = GetRawCode(LINKS.SpeedHack)
+local AntiAFK_Code  = GetRawCode(LINKS.AntiAFK)
+
+-- 4. LOGIC ENGINE
+local ActiveCleanups = {}
+
+local function RunScript(code, isActive, featureName)
+    -- TURN OFF
+    if not isActive then
+        if ActiveCleanups[featureName] then
+            -- Run the custom cleanup function returned by the script
+            pcall(ActiveCleanups[featureName])
+            ActiveCleanups[featureName] = nil
+        else
+            -- Fallback: Try to find a GUI with a matching name if no cleanup was provided
+            local checkGui = game.CoreGui:FindFirstChild(featureName) or game.CoreGui:FindFirstChild(featureName.."_Holder")
+            if checkGui then checkGui:Destroy() end
+        end
+        return
+    end
+
+    -- TURN ON
+    if code then
+        local func, err = loadstring(code)
+        if func then
+            -- Execute the script
+            local cleanupAction = func()
+            
+            -- If the script returns a function, store it for later cleanup
+            if type(cleanupAction) == "function" then
+                ActiveCleanups[featureName] = cleanupAction
+            end
+        else
+            warn("Error loading script: " .. err)
+        end
+    end
+end
+
+
+-- 5. CREATE BUTTONS
+
+
+CreateFunctionToggle(VisualsContent, "Watermark", function(state)
+    RunScript(Watermark_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
+end)
+
+-- [MOVEMENT TAB]
+--CreateFunctionToggle(MovementContent, "Test Function in movement!", function(state)
+--     RunScript(Speed_Code1, state, "SpeedHack")
+--end)
+
+-- [FEATURES TAB]
+CreateFunctionToggle(FeaturesContent, "Anti AFK", function(state)
+    RunScript(Clicker_Code, state, "AntiAFK")
+end)
+
