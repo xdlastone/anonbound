@@ -128,7 +128,7 @@ local function createInterface()
 	cardStroke.Parent = centerCard
 
 	local cardTitle = Instance.new("TextLabel")
-	cardTitle.Text = "Anonbound [legit]"
+	cardTitle.Text = "ANONBOUND BETA"
 	cardTitle.Font = Enum.Font.GothamBold
 	cardTitle.TextSize = 21
 	cardTitle.TextColor3 = C_TEXT_DIM
