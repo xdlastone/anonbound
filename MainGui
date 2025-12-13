@@ -760,7 +760,7 @@ inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
         toggleMenu()
 
     elseif input.KeyCode == Enum.KeyCode.Insert then
-        SendNotification("System", "Uninjecting software...", 3)
+        SendNotification("System", "Uninjecting software... Hope you enjoyed!", 3)
         if inputConnection then inputConnection:Disconnect() end
         task.delay(1, function()
             if blurEffect then blurEffect:Destroy() end
@@ -777,5 +777,5 @@ toggleMenu()
 end)
 
 -- 30 Seconds Duration
-SendNotification("Anonbound", "Welcome, " .. player.Name .. "! Thanks for executing our script.", 30)
+SendNotification("Anonbound", "Welcome, " .. player.Name .. ".", 30)
 SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
