@@ -508,7 +508,7 @@ CreateThemeDropdown()
 -- [[ USER PROFILE ]] --
 local profileContainer = Instance.new("Frame")
 profileContainer.Name = "UserProfile"
-profileContainer.Size = UDim2.new(0, 135, 0, 36)
+profileContainer.Size = UDim2.new(0, 155, 0, 36)
 profileContainer.AnchorPoint = Vector2.new(1, 0.5) 
 profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
 profileContainer.BackgroundColor3 = C_BG 
@@ -772,7 +772,7 @@ end)
 -- Initial Open
 toggleMenu()
 
-CreateFuncButton("Exit", function()
+CreateFuncButton("Close", function()
 toggleMenu()
 end)
 
