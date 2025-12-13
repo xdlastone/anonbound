@@ -1,20 +1,188 @@
--- [[ 1. Создаем GUI ]] --
-local Watermark = Instance.new("ScreenGui")
-Watermark.Name = "MyWatermark" -- Важно дать имя
-Watermark.Parent = game.CoreGui
-Watermark.IgnoreGuiInset = true
+-- [[ CONFIGURATION ]] 
+local C_ACCENT      = Color3.fromHex("#c72d80") 
+local C_ACCENT_DARK = Color3.fromHex("#4a1030") 
+local C_TEXT        = Color3.fromHex("#ffffff") 
+local C_TEXT_DIM    = Color3.fromHex("#7e7e8c") 
+local C_CARD_BG     = Color3.fromHex("#1e1e29")
+local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35")
 
+-- Services
+local RunService = game:GetService("RunService")
+local StatsService = game:GetService("Stats")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local TextService = game:GetService("TextService")
+
+local GUI_NAME = "MyWatermark" 
+
+-- 1. Setup ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = GUI_NAME
+if pcall(function() ScreenGui.Parent = CoreGui end) then
+    ScreenGui.Parent = CoreGui
+else
+    ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+ScreenGui.DisplayOrder = 1000
+ScreenGui.IgnoreGuiInset = true
+
+-- 2. Border Frame (Внешняя обводка)
+local BorderFrame = Instance.new("Frame")
+BorderFrame.Name = "BorderFrame"
+BorderFrame.Parent = ScreenGui
+BorderFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+BorderFrame.BorderSizePixel = 0
+BorderFrame.Position = UDim2.new(0.015, 0, 0.02, 0)
+BorderFrame.Size = UDim2.new(0, 0, 0, 38) 
+BorderFrame.Active = true
+
+local BorderCorner = Instance.new("UICorner")
+BorderCorner.CornerRadius = UDim.new(0, 6)
+BorderCorner.Parent = BorderFrame
+
+-- Градиент "Водопад"
+local WaterfallGradient = Instance.new("UIGradient")
+WaterfallGradient.Rotation = 90
+WaterfallGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0.0, C_ACCENT),
+    ColorSequenceKeypoint.new(0.5, C_ACCENT_DARK),
+    ColorSequenceKeypoint.new(1.0, C_ACCENT)
+}
+WaterfallGradient.Parent = BorderFrame
+
+-- 3. Inner Frame (Фон)
+local InnerFrame = Instance.new("Frame")
+InnerFrame.Name = "InnerFrame"
+InnerFrame.Parent = BorderFrame
+InnerFrame.BackgroundColor3 = C_TEXT
+InnerFrame.BorderSizePixel = 0
+InnerFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+InnerFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+InnerFrame.Size = UDim2.new(1, -3, 1, -3) 
+InnerFrame.ClipsDescendants = true
+
+local InnerCorner = Instance.new("UICorner")
+InnerCorner.CornerRadius = UDim.new(0, 5)
+InnerCorner.Parent = InnerFrame
+
+-- Фон карточки
+local InnerGradient = Instance.new("UIGradient")
+InnerGradient.Rotation = 90
+InnerGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C_CARD_BG),
+    ColorSequenceKeypoint.new(1, C_CARD_GRADIENT_BOTTOM)
+}
+InnerGradient.Parent = InnerFrame
+
+-- 4. Text Label
 local Label = Instance.new("TextLabel")
-Label.Parent = Watermark
-Label.Text = "ANONBOUND | USER"
-Label.Size = UDim2.new(0, 200, 0, 30)
-Label.Position = UDim2.new(0, 50, 0, 50)
-Label.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+Label.Parent = InnerFrame
+Label.BackgroundTransparency = 1
+Label.Position = UDim2.new(0, 12, 0, 0)
+Label.Size = UDim2.new(0, 0, 1, 0)
+Label.Font = Enum.Font.GothamMedium
+Label.TextSize = 16 
+Label.TextColor3 = C_TEXT
+Label.RichText = true
+Label.TextXAlignment = Enum.TextXAlignment.Left
 
--- [[ 2. ВАЖНАЯ ЧАСТЬ ]] --
--- Мы возвращаем функцию. 
--- Когда чит выключит кнопку, он запустит эту функцию, и она удалит GUI.
+-- 5. Drag Logic
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    BorderFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+BorderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = BorderFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+BorderFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+local dragConn = game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then update(input) end
+end)
+
+-- 6. Main Loop & Logic
+local currentWidth = 0
+local name = Players.LocalPlayer and Players.LocalPlayer.Name or "User"
+
+-- Переменные для таймера 1 секунды
+local timeElapsed = 0
+local frameCount = 0
+
+local connection = RunService.RenderStepped:Connect(function(deltaTime)
+    if not BorderFrame.Parent then return end
+    
+    -- === 1. Анимация (Каждый кадр) ===
+    -- Чтобы водопад был плавным, он должен обновляться всегда
+    local time = os.clock()
+    local speed = 0.6
+    local offset = math.fmod(time * speed, 2) - 1 
+    WaterfallGradient.Offset = Vector2.new(0, offset)
+    
+    -- === 2. Накопление данных ===
+    timeElapsed = timeElapsed + deltaTime
+    frameCount = frameCount + 1
+    
+    -- === 3. Обновление Текста (Раз в 1 секунду) ===
+    if timeElapsed >= 1 then
+        -- Вычисляем средний FPS за прошедшую секунду
+        local fps = math.floor(frameCount / timeElapsed)
+        
+        -- Получаем Пинг
+        local ping = 0
+        pcall(function()
+            ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValueString():match("%d+"))
+        end)
+        
+        -- Обновляем текст
+        local formattedText = string.format(
+            '<font color="#%s"><b>ANONBOUND</b></font>  <font color="#%s">|</font>  %s  <font color="#%s">|</font>  fps: %d  <font color="#%s">|</font>  ping: %dms',
+            C_ACCENT:ToHex(),
+            C_TEXT_DIM:ToHex(),
+            name,
+            C_TEXT_DIM:ToHex(),
+            fps,
+            C_TEXT_DIM:ToHex(),
+            ping
+        )
+        Label.Text = formattedText
+        
+        -- === 4. Стабилизация размера (Тоже раз в секунду) ===
+        local rawText = "ANONBOUND  |  " .. name .. "  |  fps: " .. fps .. "  |  ping: " .. ping .. "ms"
+        local textSize = TextService:GetTextSize(rawText, 16, Enum.Font.GothamMedium, Vector2.new(2000, 38))
+        local targetWidth = textSize.X + 28
+        
+        -- Меняем размер, если разница > 2 пикселей
+        if math.abs(targetWidth - currentWidth) > 2 then
+            currentWidth = targetWidth
+            TweenService:Create(BorderFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, targetWidth, 0, 38)
+            }):Play()
+        end
+        
+        -- Сброс таймеров
+        frameCount = 0
+        timeElapsed = 0
+    end
+end)
+
+-- 7. Cleanup
 return function()
-    Watermark:Destroy()
+    if connection then connection:Disconnect() end
+    if dragConn then dragConn:Disconnect() end
+    if ScreenGui then ScreenGui:Destroy() end
 end
