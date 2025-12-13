@@ -10,6 +10,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 		StarterGui:SetCore("SendNotification", {
 			Title = "Anonbound [script]";
+Icon = "rbxthumb://type=Asset&id=12681140123&w=150&h=150"; 
 			Text = "Script successfully executed [MainGui]";
 			Duration = 10;
 		})
