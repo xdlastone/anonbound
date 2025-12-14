@@ -1,36 +1,59 @@
-local Lighting = game:GetService("Lighting")
+-- [[ CONFIGURATION ]] 
+local TOGGLE_KEY = Enum.KeyCode.RightControl
+local NIGHT_TIME = 0 -- 00:00 (Полночь)
 
--- 1. Ищем и временно убираем старый скайбокс
-local OldSky = Lighting:FindFirstChildOfClass("Sky")
-if OldSky then
-    OldSky.Parent = nil
+-- Services
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+
+-- State
+local enabled = false
+local connection = nil
+local originalTime = Lighting.ClockTime
+
+-- [[ LOGIC ]]
+
+local function SaveOriginalTime()
+    if not enabled then
+        originalTime = Lighting.ClockTime
+    end
 end
 
--- 2. Создаем новый скайбокс (сразу при загрузке скрипта)
-local NewSky = Instance.new("Sky")
-NewSky.Name = "AnonboundSunset"
+local function RestoreTime()
+    Lighting.ClockTime = originalTime
+end
 
--- Текстуры
-NewSky.SkyboxBk = "rbxassetid://2676763428"
-NewSky.SkyboxDn = "rbxassetid://2676763073"
-NewSky.SkyboxFt = "rbxassetid://2676763953"
-NewSky.SkyboxLf = "rbxassetid://2676764377"
-NewSky.SkyboxRt = "rbxassetid://2676764834"
-NewSky.SkyboxUp = "rbxassetid://2676765184"
+local function SetNight()
+    Lighting.ClockTime = NIGHT_TIME
+end
 
-NewSky.SunTextureId = "rbxassetid://6196665106"
-NewSky.SunAngularSize = 10
-NewSky.StarCount = 3000
-NewSky.Parent = Lighting
+-- Основной цикл (Loop)
+-- Форсируем ночь, чтобы другие скрипты игры не вернули день
+connection = RunService.RenderStepped:Connect(function()
+    if enabled then
+        if Lighting.ClockTime ~= NIGHT_TIME then
+            SetNight()
+        end
+    end
+end)
 
--- 3. Возвращаем ТОЛЬКО функцию очистки
--- Эта часть сработает, когда ты нажмешь кнопку выключения в GUI
+-- Обработка нажатия клавиши
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
+        enabled = not enabled
+        
+        if enabled then
+            SaveOriginalTime()
+            SetNight()
+        else
+            RestoreTime()
+        end
+    end
+end)
+
+-- [[ CLEANUP ]]
 return function()
-    if NewSky then 
-        NewSky:Destroy() 
-    end
-    
-    if OldSky then 
-        OldSky.Parent = Lighting 
-    end
+    if connection then connection:Disconnect() end
+    RestoreTime()
 end
