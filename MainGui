@@ -887,7 +887,8 @@ end
 
 -- 2. PASTE YOUR GITHUB LINKS HERE
 local LINKS = {
-    Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark", -- Your Watermark Link here
+    Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark",
+    NightMode   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/CustomFog", 
     SpeedHack   = "", 
     AntiAFK = "" 
 }
@@ -895,6 +896,7 @@ local LINKS = {
 local Watermark_Code= GetRawCode(LINKS.Watermark)
 local Speed_Code    = GetRawCode(LINKS.SpeedHack)
 local AntiAFK_Code  = GetRawCode(LINKS.AntiAFK)
+local NightMode_Code = GetRawCode(LINKS.NightMode)
 
 -- 4. LOGIC ENGINE
 local ActiveCleanups = {}
@@ -937,6 +939,10 @@ end
 
 CreateFunctionToggle(VisualsContent, "Watermark", function(state)
     RunScript(Watermark_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
+end)
+
+CreateFunctionToggle(VisualsContent, "NightMode", function(state)
+    RunScript(NightMode_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
 end)
 
 -- [MOVEMENT TAB]
