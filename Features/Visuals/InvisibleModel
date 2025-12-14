@@ -1,72 +1,89 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local connections = {}
 
--- [[ 1. ФУНКЦИИ ЛОГИКИ ]] --
-
-local function setTransparency(part)
+-- [[ ФУНКЦИЯ, КОТОРАЯ ДЕЛАЕТ ПРОЗРАЧНЫМ ]] --
+local function UpdatePart(part)
     if part:IsA("BasePart") then
-        -- HumanoidRootPart всегда скрываем полностью
         if part.Name == "HumanoidRootPart" then
-            part.Transparency = 1
-        -- Остальные части делаем полупрозрачными
+            part.Transparency = 1 -- Всегда скрываем квадрат
         else
-            part.Transparency = 0.5
+            part.Transparency = 0.5 -- Остальное полупрозрачное
         end
     end
 end
 
-local function onCharacter(character)
+local function SetupCharacter(character)
     if not character then return end
     
-    -- Меняем прозрачность у существующих частей
+    -- Сразу обрабатываем все части
     for _, part in pairs(character:GetDescendants()) do
-        setTransparency(part)
+        UpdatePart(part)
     end
-
-    -- Следим за новыми частями (аксессуары/броня)
-    local conn = character.DescendantAdded:Connect(function(descendant)
-        task.wait() -- Ждем применения дефолтных настроек роблокса
-        setTransparency(descendant)
+    
+    -- Если игра пытается изменить прозрачность обратно (например, при спавне),
+    -- мы слушаем это и мгновенно возвращаем 0.5
+    local connAdded = character.DescendantAdded:Connect(function(child)
+        task.wait()
+        UpdatePart(child)
     end)
-    table.insert(connections, conn)
+    table.insert(connections, connAdded)
 end
 
--- [[ 2. ЗАПУСК (ВКЛЮЧЕНИЕ) ]] --
+-- [[ ЗАПУСК ЛОГИКИ (ВКЛЮЧЕНИЕ) ]] --
 
--- Проходимся по всем игрокам, которые уже есть
+-- 1. Проходимся по всем игрокам
 for _, player in pairs(Players:GetPlayers()) do
     if player.Character then
-        onCharacter(player.Character)
+        SetupCharacter(player.Character)
     end
-    -- Подписываемся на их респавн
-    local conn = player.CharacterAdded:Connect(onCharacter)
+    -- Следим за респавном
+    local conn = player.CharacterAdded:Connect(SetupCharacter)
     table.insert(connections, conn)
 end
 
--- Подписываемся на вход новых игроков
-local addedConn = Players.PlayerAdded:Connect(function(player)
-    local conn = player.CharacterAdded:Connect(onCharacter)
+-- 2. Следим за входом новых людей
+local connNewPlayer = Players.PlayerAdded:Connect(function(player)
+    local conn = player.CharacterAdded:Connect(SetupCharacter)
     table.insert(connections, conn)
 end)
-table.insert(connections, addedConn)
+table.insert(connections, connNewPlayer)
 
--- [[ 3. ВОЗВРАТ ФУНКЦИИ ОЧИСТКИ (ВЫКЛЮЧЕНИЕ) ]] --
+-- 3. Дополнительная страховка: каждые 2 секунды проверяем, не сбросилась ли прозрачность
+-- (Это решает проблему, если какой-то другой скрипт игры перекрашивает персонажей)
+local loop = task.spawn(function()
+    while true do
+        task.wait(2)
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    UpdatePart(part)
+                end
+            end
+        end
+    end
+end)
 
+-- [[ ФУНКЦИЯ ОЧИСТКИ (ВЫКЛЮЧЕНИЕ) ]] --
 return function()
-    -- Отключаем все события (чтобы новые игроки/части не становились прозрачными)
+    -- Останавливаем вечный цикл проверки
+    if loop then task.cancel(loop) end
+
+    -- Отключаем подслушивание событий
     for _, conn in pairs(connections) do
         if conn then conn:Disconnect() end
     end
-    
-    -- Возвращаем видимость как было
+    connections = {}
+
+    -- Возвращаем нормальный вид (НЕПРОЗРАЧНЫЙ)
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character then
             for _, part in pairs(player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     if part.Name == "HumanoidRootPart" then
-                        part.Transparency = 1
+                        part.Transparency = 1 -- Квадрат скрыт
                     else
-                        part.Transparency = 0 -- Возвращаем полную видимость
+                        part.Transparency = 0 -- Тело видно полностью
                     end
                 end
             end
