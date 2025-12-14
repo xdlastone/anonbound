@@ -1,1 +1,69 @@
 
+return function()
+    local Players = game:GetService("Players")
+    local connections = {}
+
+    -- Функция применения прозрачности
+    local function applyTransparency(character)
+        if not character then return end
+        
+        -- Ждем, пока персонаж загрузится, если нужно
+        task.wait(0.1)
+        
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                -- Ставим 0.5 для всего, включая HumanoidRootPart
+                part.Transparency = 0.5
+            end
+        end
+        
+        -- Следим за появлением новых частей (например, брони или аксессуаров)
+        local conn = character.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("BasePart") then
+                task.wait() -- Ждем кадр, чтобы свойства применились движком, потом меняем
+                descendant.Transparency = 0.5
+            end
+        end)
+        table.insert(connections, conn)
+    end
+
+    -- Применяем ко всем текущим игрокам
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            applyTransparency(player.Character)
+        end
+        -- Следим за респавном
+        local conn = player.CharacterAdded:Connect(applyTransparency)
+        table.insert(connections, conn)
+    end
+
+    -- Следим за новыми игроками
+    local addedConn = Players.PlayerAdded:Connect(function(player)
+        local conn = player.CharacterAdded:Connect(applyTransparency)
+        table.insert(connections, conn)
+    end)
+    table.insert(connections, addedConn)
+
+    -- Функция очистки (выполняется при выключении чита)
+    return function()
+        -- Отключаем все прослушки событий
+        for _, conn in pairs(connections) do
+            conn:Disconnect()
+        end
+
+        -- Возвращаем нормальный вид
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        if part.Name == "HumanoidRootPart" then
+                            part.Transparency = 1 -- Скрываем рут парт
+                        else
+                            part.Transparency = 0 -- Остальное делаем непрозрачным
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
