@@ -838,6 +838,34 @@ end)
 SendNotification("Anonbound", "Welcome, " .. player.Name .. ".", 30)
 SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
 
+-- ============================================================================
+-- [[ INTRO MUSIC ]]
+-- ============================================================================
+
+local function PlayIntroMusic()
+    local sound = Instance.new("Sound")
+    sound.Name = "WakeIntroMusic"
+    -- Ниже в кавычках вставь ID своей музыки.
+    -- Сейчас стоит пример (Phonk/Dark стиль, который подходит под тему):
+    sound.SoundId = "rbxassetid://111174530730534" 
+    sound.Volume = 5.5 -- Громкость (от 0 до 10)
+    sound.Looped = false -- false = играть 1 раз, true = бесконечно
+    sound.Parent = game:GetService("SoundService")
+    
+    if not sound.IsLoaded then
+        sound.Loaded:Wait()
+    end
+    
+    sound:Play()
+    
+    -- Очистка после завершения трека
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
+
+task.spawn(PlayIntroMusic)
+
 
 -- ============================================================================
 -- [[ GITHUB LOADER & LOGIC ]]
@@ -920,4 +948,3 @@ end)
 CreateFunctionToggle(FeaturesContent, "Anti AFK", function(state)
     RunScript(Clicker_Code, state, "AntiAFK")
 end)
-
