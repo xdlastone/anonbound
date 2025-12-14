@@ -889,6 +889,7 @@ end
 local LINKS = {
     Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark",
     NightMode   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/CustomFog", 
+	NightSkyBox = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/NightSkyBox",
     SpeedHack   = "", 
     AntiAFK = "" 
 }
@@ -897,6 +898,7 @@ local Watermark_Code= GetRawCode(LINKS.Watermark)
 local Speed_Code    = GetRawCode(LINKS.SpeedHack)
 local AntiAFK_Code  = GetRawCode(LINKS.AntiAFK)
 local NightMode_Code = GetRawCode(LINKS.NightMode)
+local NightSkyBox_Code = GetRawCode(LINKS.NightSkyBox)
 
 -- 4. LOGIC ENGINE
 local ActiveCleanups = {}
@@ -941,8 +943,13 @@ CreateFunctionToggle(VisualsContent, "Watermark", function(state)
     RunScript(Watermark_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
 end)
 
-CreateFunctionToggle(VisualsContent, "NightMode", function(state)
-    RunScript(NightMode_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
+CreateFunctionToggle(VisualsContent, "Night Mode", function(state)
+    RunScript(NightMode_Code, state, "NightModeFeature") -- "MyWatermark" should match the GUI name
+end)
+
+CreateFunctionToggle(VisualsContent, "Night Skybox", function(state)
+    -- Убедись, что 3-й аргумент (ID) уникален! Не "MyWatermark".
+    RunScript(NightSkyBox_Code, state, "NightSkyBox_Feature") 
 end)
 
 -- [MOVEMENT TAB]
