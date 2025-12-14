@@ -1,30 +1,58 @@
--- [[ CONFIGURATION ]] 
-local NIGHT_TIME = 0 -- 00:00 (Полночь)
+-- [[ CONFIGURATION ]]
+-- 100% Solid Black Texture
+local VOID_TEXTURE = "rbxassetid://12933412742"
 
 -- Services
-local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 
--- 1. Сохраняем оригинальное время перед изменением
-local originalTime = Lighting.ClockTime
+-- Хранилище
+local hiddenObjects = {}
+local voidSky = nil
 
--- 2. Функция установки ночи
-local function SetNight()
-    Lighting.ClockTime = NIGHT_TIME
+-- [[ LOGIC ]]
+
+local function EnableVoid()
+    -- 1. Прячем всё текущее
+    for _, obj in pairs(Lighting:GetChildren()) do
+        if obj:IsA("Sky") or obj:IsA("Atmosphere") then
+            table.insert(hiddenObjects, obj)
+            obj.Parent = nil 
+        end
+    end
+
+    -- 2. Создаем Пустоту
+    voidSky = Instance.new("Sky")
+    voidSky.Name = "Anonbound_Void"
+    
+    voidSky.SkyboxBk = VOID_TEXTURE
+    voidSky.SkyboxDn = VOID_TEXTURE
+    voidSky.SkyboxFt = VOID_TEXTURE
+    voidSky.SkyboxLf = VOID_TEXTURE
+    voidSky.SkyboxRt = VOID_TEXTURE
+    voidSky.SkyboxUp = VOID_TEXTURE
+    
+    voidSky.CelestialBodiesShown = false 
+    voidSky.StarCount = 0
+    voidSky.SunTextureId = ""
+    voidSky.MoonTextureId = ""
+    
+    voidSky.Parent = Lighting
 end
 
--- 3. Применяем сразу при запуске
-SetNight()
+-- Запускаем
+EnableVoid()
 
--- 4. Запускаем цикл (чтобы игра не сменила время обратно)
-local connection = RunService.RenderStepped:Connect(function()
-    if Lighting.ClockTime ~= NIGHT_TIME then
-        SetNight()
-    end
-end)
-
--- 5. ВАЖНО: Возвращаем функцию очистки для твоей базы
+-- [[ CLEANUP ]]
 return function()
-    if connection then connection:Disconnect() end
-    Lighting.ClockTime = originalTime -- Возвращаем время как было
+    if voidSky then
+        voidSky:Destroy()
+    end
+
+    for _, obj in pairs(hiddenObjects) do
+        if obj then
+            obj.Parent = Lighting
+        end
+    end
+    
+    hiddenObjects = {}
 end
