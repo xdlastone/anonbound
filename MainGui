@@ -1,950 +1,116 @@
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
-local Lighting = game:GetService("Lighting")
+-- [[ CONFIGURATION ]] 
+local TOGGLE_KEY      = Enum.KeyCode.RightControl
+
+-- Настройки атмосферы (Night / Dim Mode)
+local C_FOG           = Color3.fromHex("#131318") -- Очень темный, почти черный цвет тумана
+local C_AMBIENT       = Color3.fromHex("#2a2a30") -- Тусклый цвет теней (чтобы не было черных дыр, но было темно)
+local C_OUTDOOR       = Color3.fromHex("#1a1a20") -- Цвет внешнего освещения
+
+local FOG_END         = 250   -- Дальность прорисовки (чем меньше, тем гуще туман)
+local FOG_START       = 0     -- Начало тумана
+local BRIGHTNESS      = 0     -- Яркость солнца (0 для мрачности)
+local CLOCK_TIME      = 0     -- Время (00:00 - полночь)
+
+-- Services
 local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-
--- [[ CONFIGURATION: COLORS ]] --
-local C_BG          = Color3.fromHex("#14141e") 
-local C_HEADER      = Color3.fromHex("#1c1c2b") 
-local C_ACCENT      = Color3.fromHex("#c72d80") 
-local C_TEXT        = Color3.fromHex("#ffffff") 
-local C_TEXT_DIM    = Color3.fromHex("#7e7e8c") 
-local C_STROKE      = Color3.fromHex("#2d2d3d") 
-local C_CARD_BG     = Color3.fromHex("#1e1e29")
-local C_CARD_GRADIENT_BOTTOM = Color3.fromHex("#2a2a35") 
-
--- [[ COLORS FOR BLOCKS ]] --
-local C_BLOCK_BG     = Color3.fromHex("#111119") 
-local C_BLOCK_HEADER = Color3.fromHex("#1a1a25") 
-local C_BLOCK_GRADIENT_BOTTOM = Color3.fromHex("#1a1a25") 
-
--- [[ BLUR SETUP ]] --
-for _, child in pairs(Lighting:GetChildren()) do
-    if child.Name == "AnonboundBlur" then child:Destroy() end
-end
-
-local blurEffect = Instance.new("BlurEffect")
-blurEffect.Name = "AnonboundBlur"
-blurEffect.Size = 0 
-blurEffect.Parent = Lighting
-
--- [[ MAIN SCREEN GUI ]] --
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "WakeUI"
-screenGui.ResetOnSpawn = false 
-if playerGui:FindFirstChild("WakeUI") then
-    playerGui.WakeUI:Destroy()
-end
-screenGui.Parent = playerGui
-
--- ============================================================================
--- [[ NOTIFICATION SYSTEM ]]
--- ============================================================================
-
-local NotifHolder = Instance.new("Frame")
-NotifHolder.Name = "NotificationHolder"
-NotifHolder.Parent = screenGui 
-NotifHolder.BackgroundTransparency = 1
-NotifHolder.AnchorPoint = Vector2.new(1, 0) 
-NotifHolder.Position = UDim2.new(1, -20, 0, 20) 
-NotifHolder.Size = UDim2.new(0, 330, 0.8, 0) 
-
-local NotifList = Instance.new("UIListLayout")
-NotifList.Parent = NotifHolder
-NotifList.SortOrder = Enum.SortOrder.LayoutOrder
-NotifList.Padding = UDim.new(0, 10) 
-NotifList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-NotifList.VerticalAlignment = Enum.VerticalAlignment.Top
-
-local function SendNotification(title, text, duration)
-    duration = duration or 5
-    
-    local Container = Instance.new("Frame")
-    Container.Name = "NotifContainer"
-    Container.Parent = NotifHolder
-    Container.BackgroundTransparency = 1
-    Container.Size = UDim2.new(1, 0, 0, 55) 
-    
-    local Card = Instance.new("Frame")
-    Card.Name = "Card"
-    Card.Parent = Container
-    Card.BackgroundColor3 = Color3.new(1, 1, 1)
-    Card.Size = UDim2.new(1, 0, 1, 0)
-    Card.Position = UDim2.new(1.5, 0, 0, 0) 
-    
-    local Gradient = Instance.new("UIGradient")
-    Gradient.Rotation = 90
-    Gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, C_CARD_BG),
-        ColorSequenceKeypoint.new(1, C_CARD_GRADIENT_BOTTOM)
-    }
-    Gradient.Parent = Card
-
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = Card
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = C_STROKE
-    UIStroke.Thickness = 1.5
-    UIStroke.Parent = Card
-    
-    local AccentBar = Instance.new("Frame")
-    AccentBar.BackgroundColor3 = C_ACCENT
-    AccentBar.Size = UDim2.new(0, 4, 0, 40)
-    AccentBar.Position = UDim2.new(0, 0, 0.5, 0)
-    AccentBar.AnchorPoint = Vector2.new(0, 0.5)
-    AccentBar.BorderSizePixel = 0
-    AccentBar.Parent = Card
-    
-    local BarCorner = Instance.new("UICorner") 
-    BarCorner.CornerRadius = UDim.new(0, 4)
-    BarCorner.Parent = AccentBar
-    
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Parent = Card
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 15, 0, 8)
-    TitleLabel.Size = UDim2.new(1, -20, 0, 20)
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.Text = title
-    TitleLabel.TextColor3 = C_TEXT
-    TitleLabel.TextSize = 14
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.ZIndex = 2
-    
-    local TextLabel = Instance.new("TextLabel")
-    TextLabel.Parent = Card
-    TextLabel.BackgroundTransparency = 1
-    TextLabel.Position = UDim2.new(0, 15, 0, 28)
-    TextLabel.Size = UDim2.new(1, -20, 0, 35)
-    TextLabel.Font = Enum.Font.Gotham
-    TextLabel.Text = text
-    TextLabel.TextColor3 = C_TEXT_DIM
-    TextLabel.TextSize = 13 
-    TextLabel.TextWrapped = true
-    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel.TextYAlignment = Enum.TextYAlignment.Top
-    TextLabel.ZIndex = 2
-    
-    local infoIn = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    local infoOut = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-    
-    local tweenIn = TweenService:Create(Card, infoIn, {Position = UDim2.new(0, 0, 0, 0)})
-    tweenIn:Play()
-    
-    task.spawn(function()
-        task.wait(duration) 
-        if Card and Card.Parent then
-            local tweenOut = TweenService:Create(Card, infoOut, {Position = UDim2.new(1.5, 0, 0, 0)})
-            tweenOut:Play()
-            tweenOut.Completed:Wait() 
-        end
-        if Container then Container:Destroy() end
-    end)
-end
-
--- ============================================================================
--- [[ MAIN INTERFACE BODY ]]
--- ============================================================================
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 0, 0, 0)
-mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-mainFrame.BackgroundColor3 = C_BG
-mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-mainFrame.Active = true
-mainFrame.ClipsDescendants = true 
-mainFrame.Visible = false
-mainFrame.Parent = screenGui
-
-local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = C_STROKE
-mainStroke.Thickness = 1
-mainStroke.Parent = mainFrame
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
-mainCorner.Parent = mainFrame
-
--- [[ HEADER SECTION ]] --
-local headerFrame = Instance.new("Frame")
-headerFrame.Name = "Header"
-headerFrame.Size = UDim2.new(1, 0, 0, 60)
-headerFrame.Position = UDim2.new(0, 0, 0, 0)
-headerFrame.BackgroundColor3 = C_HEADER
-headerFrame.BorderSizePixel = 0
-headerFrame.ZIndex = 10 
-headerFrame.Parent = mainFrame
-
-local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 8)
-headerCorner.Parent = headerFrame
-
-local headerPatch = Instance.new("Frame")
-headerPatch.Size = UDim2.new(1, 0, 0, 10)
-headerPatch.Position = UDim2.new(0, 0, 1, -10)
-headerPatch.BackgroundColor3 = C_HEADER
-headerPatch.BorderSizePixel = 0
-headerPatch.ZIndex = 10
-headerPatch.Parent = headerFrame
-
--- ============================================================================
--- [[ AGGRESSIVE FATALITY GLITCH LOGIC ]]
--- ============================================================================
-
-local title = Instance.new("TextLabel")
-title.Name = "TitleMain"
-title.Size = UDim2.new(0, 200, 1, 0)
-title.Position = UDim2.new(0, 20, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "ANONBOUND"
-title.TextColor3 = C_TEXT -- Белый
-title.Font = Enum.Font.GothamBold
-title.TextSize = 24
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.ZIndex = 14 
-title.Parent = headerFrame
-
-local function EnableFatalityGlitch(mainTitle)
-    local ColorRed = Color3.fromRGB(255, 30, 30)
-    local ColorBlue = Color3.fromRGB(50, 50, 255)
-    
-    local ghostRed = mainTitle:Clone()
-    ghostRed.Name = "GhostRed"
-    ghostRed.Parent = mainTitle.Parent
-    ghostRed.TextColor3 = ColorRed
-    ghostRed.ZIndex = 13
-    ghostRed.TextTransparency = 0.25 
-    
-    local ghostBlue = mainTitle:Clone()
-    ghostBlue.Name = "GhostBlue"
-    ghostBlue.Parent = mainTitle.Parent
-    ghostBlue.TextColor3 = ColorBlue
-    ghostBlue.ZIndex = 13
-    ghostBlue.TextTransparency = 0.25 
-
-    local basePos = mainTitle.Position
-    
-    RunService.Heartbeat:Connect(function()
-        if not mainTitle or not mainTitle.Parent then return end
-
-        local isSpike = math.random() > 0.85 
-        local intensity = isSpike and 6 or 2.5 
-        
-        local offX_Red = math.random(-intensity, intensity)
-        local offY_Red = math.random(-intensity/2, intensity/2)
-        local offX_Blue = math.random(-intensity, intensity)
-        local offY_Blue = math.random(-intensity/2, intensity/2)
-
-        ghostRed.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + offX_Red, basePos.Y.Scale, basePos.Y.Offset + offY_Red)
-        ghostBlue.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset - offX_Blue, basePos.Y.Scale, basePos.Y.Offset - offY_Blue)
-        
-        if math.random() > 0.9 then
-            ghostRed.Visible = not ghostRed.Visible
-        elseif math.random() > 0.9 then
-            ghostBlue.Visible = not ghostBlue.Visible
-        else
-            ghostRed.Visible = true
-            ghostBlue.Visible = true
-        end
-    end)
-end
-
-EnableFatalityGlitch(title)
-
--- [[ FUNCTIONAL BUTTONS ]] --
-local navContainer = Instance.new("Frame")
-navContainer.Name = "NavContainer"
-navContainer.Size = UDim2.new(0, 520, 1, 0)
-navContainer.Position = UDim2.new(0.5, 0, 0, 0)
-navContainer.AnchorPoint = Vector2.new(0.5, 0)
-navContainer.BackgroundTransparency = 1
-navContainer.ZIndex = 11
-navContainer.Parent = headerFrame
-
-local navList = Instance.new("UIListLayout")
-navList.Parent = navContainer
-navList.FillDirection = Enum.FillDirection.Horizontal
-navList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-navList.VerticalAlignment = Enum.VerticalAlignment.Center
-navList.Padding = UDim.new(0, 10)
-
-local function CreateFuncButton(text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Name = text
-    btn.Parent = navContainer
-    btn.BackgroundColor3 = C_BG 
-    btn.Size = UDim2.new(0, 0, 0, 32) 
-    btn.AutomaticSize = Enum.AutomaticSize.X 
-    btn.Font = Enum.Font.GothamBold
-    btn.Text = text
-    btn.TextSize = 12
-    btn.TextColor3 = C_TEXT_DIM
-    btn.AutoButtonColor = false 
-    btn.ZIndex = 12
-    
-    local uic = Instance.new("UICorner")
-    uic.CornerRadius = UDim.new(0, 6)
-    uic.Parent = btn
-    
-    local uis = Instance.new("UIStroke")
-    uis.Color = C_STROKE
-    uis.Thickness = 1
-    uis.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    uis.Parent = btn
-
-    local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 12)
-    padding.PaddingRight = UDim.new(0, 12)
-    padding.Parent = btn
-
-    local isHovered = false
-    local activeTweens = {} 
-
-    local function cleanup()
-        for _, t in pairs(activeTweens) do
-            if t then t:Cancel() end
-        end
-        activeTweens = {}
-    end
-
-    local function animate(textColor, bgColor, strokeColor)
-        cleanup() 
-        local t1 = TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = textColor, BackgroundColor3 = bgColor})
-        local t2 = TweenService:Create(uis, TweenInfo.new(0.2), {Color = strokeColor})
-        
-        table.insert(activeTweens, t1)
-        table.insert(activeTweens, t2)
-        t1:Play()
-        t2:Play()
-    end
-
-    btn.MouseEnter:Connect(function()
-        isHovered = true
-        animate(C_TEXT, C_BLOCK_HEADER, C_ACCENT)
-    end)
-
-    btn.MouseLeave:Connect(function()
-        isHovered = false
-        task.delay(0.05, function()
-            if not isHovered then
-                animate(C_TEXT_DIM, C_BG, C_STROKE)
-            end
-        end)
-    end)
-    
-    btn.MouseButton1Click:Connect(function()
-         cleanup()
-         TweenService:Create(btn, TweenInfo.new(0.05), {TextColor3 = C_ACCENT, BackgroundColor3 = C_HEADER}):Play()
-         task.wait(0.05)
-         
-         if isHovered then
-             animate(C_TEXT, C_BLOCK_HEADER, C_ACCENT)
-         else
-             animate(C_TEXT_DIM, C_BG, C_STROKE)
-         end
-         
-         if callback then callback() end
-    end)
-end
-
-CreateFuncButton("AA Settings", function()
-    SendNotification("Action", "Anti-aim is in development", 3)
-end)
-
-CreateFuncButton("Client Settings", function()
-    SendNotification("Action", "Client settings is in development", 3)
-end)
-
-CreateFuncButton("Executor", function()
-    SendNotification("Anonbound", "Executor is in development", 3)
-end)
-
-CreateFuncButton("Troll", function()
-    SendNotification("Anonbound", "Trolling is in development", 3)
-end)
-
--- [[ THEME DROPDOWN LOGIC ]] --
-local function CreateThemeDropdown()
-    local DropdownContainer = Instance.new("Frame")
-    DropdownContainer.Name = "ThemeDropdown"
-    DropdownContainer.Parent = navContainer
-    DropdownContainer.BackgroundColor3 = Color3.new(1, 1, 1)
-    DropdownContainer.BackgroundTransparency = 1
-    DropdownContainer.Size = UDim2.new(0, 90, 0, 32)
-    DropdownContainer.ZIndex = 20 
-
-    local DropBtn = Instance.new("TextButton")
-    DropBtn.Name = "DropBtn"
-    DropBtn.Parent = DropdownContainer
-    DropBtn.BackgroundColor3 = C_BG
-    DropBtn.Size = UDim2.new(1, 0, 1, 0)
-    DropBtn.Font = Enum.Font.GothamBold
-    DropBtn.Text = "Themes"
-    DropBtn.TextSize = 12
-    DropBtn.TextColor3 = C_TEXT_DIM
-    DropBtn.AutoButtonColor = false
-    DropBtn.ZIndex = 21
-
-    local uic = Instance.new("UICorner")
-    uic.CornerRadius = UDim.new(0, 6)
-    uic.Parent = DropBtn
-
-    local uis = Instance.new("UIStroke")
-    uis.Color = C_STROKE
-    uis.Thickness = 1
-    uis.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    uis.Parent = DropBtn
-
-    local ListFrame = Instance.new("Frame")
-    ListFrame.Name = "ListFrame"
-    ListFrame.Parent = DropdownContainer
-    ListFrame.BackgroundColor3 = C_BLOCK_BG
-    ListFrame.Size = UDim2.new(1, 0, 0, 0)
-    ListFrame.Position = UDim2.new(0, 0, 1, 5)
-    ListFrame.ClipsDescendants = true
-    ListFrame.BorderSizePixel = 0
-    ListFrame.ZIndex = 20
-    
-    local ListCorner = Instance.new("UICorner")
-    ListCorner.CornerRadius = UDim.new(0, 6)
-    ListCorner.Parent = ListFrame
-    
-    local ListStroke = Instance.new("UIStroke")
-    ListStroke.Color = C_STROKE
-    ListStroke.Thickness = 1
-    ListStroke.Parent = ListFrame
-
-    local UIList = Instance.new("UIListLayout")
-    UIList.Parent = ListFrame
-    UIList.SortOrder = Enum.SortOrder.LayoutOrder
-    UIList.Padding = UDim.new(0, 2)
-    UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    
-    local ListPadding = Instance.new("UIPadding")
-    ListPadding.PaddingTop = UDim.new(0, 5)
-    ListPadding.Parent = ListFrame
-
-    local function AddThemeOption(name, colorHex)
-        local OptBtn = Instance.new("TextButton")
-        OptBtn.Name = name
-        OptBtn.Parent = ListFrame
-        OptBtn.BackgroundTransparency = 1
-        OptBtn.Size = UDim2.new(0.9, 0, 0, 25)
-        OptBtn.Font = Enum.Font.GothamMedium
-        OptBtn.Text = name
-        OptBtn.TextColor3 = C_TEXT_DIM
-        OptBtn.TextSize = 11
-        OptBtn.ZIndex = 22
-
-        OptBtn.MouseEnter:Connect(function()
-            TweenService:Create(OptBtn, TweenInfo.new(0.2), {TextColor3 = Color3.fromHex(colorHex)}):Play()
-        end)
-
-        OptBtn.MouseLeave:Connect(function()
-            TweenService:Create(OptBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play()
-        end)
-
-        OptBtn.MouseButton1Click:Connect(function()
-            SendNotification("Themes", "(Sorry, themes is in development) Selected: " .. name, 2)
-        end)
-    end
-
-    AddThemeOption("Default", "#c72d80")
-
-    local isHovering = false
-    local currentBtnTween = nil 
-    local currentStrokeTween = nil 
-
-    local function PlayTween(object, goals, duration, style, dir)
-        local tInfo = TweenInfo.new(duration or 0.2, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out)
-        local tween = TweenService:Create(object, tInfo, goals)
-        tween:Play()
-        return tween
-    end
-
-    local function OpenMenu()
-        isHovering = true
-        if currentBtnTween then currentBtnTween:Cancel() end
-        if currentStrokeTween then currentStrokeTween:Cancel() end
-
-        currentBtnTween = PlayTween(DropBtn, {TextColor3 = C_TEXT, BackgroundColor3 = C_BLOCK_HEADER})
-        currentStrokeTween = PlayTween(uis, {Color = C_ACCENT})
-        PlayTween(ListFrame, {Size = UDim2.new(1, 0, 0, 115)}, 0.3, Enum.EasingStyle.Quart)
-    end
-
-    local function CloseMenu()
-        isHovering = false
-        task.delay(0.05, function() 
-            if not isHovering then
-                if currentBtnTween then currentBtnTween:Cancel() end
-                if currentStrokeTween then currentStrokeTween:Cancel() end
-
-                currentBtnTween = PlayTween(DropBtn, {TextColor3 = C_TEXT_DIM, BackgroundColor3 = C_BG})
-                currentStrokeTween = PlayTween(uis, {Color = C_STROKE})
-                PlayTween(ListFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            end
-        end)
-    end
-
-    DropdownContainer.MouseEnter:Connect(OpenMenu)
-    DropdownContainer.MouseLeave:Connect(CloseMenu)
-    ListFrame.MouseEnter:Connect(function() isHovering = true end)
-    ListFrame.MouseLeave:Connect(CloseMenu)
-end
-
-CreateThemeDropdown()
-
--- [[ USER PROFILE ]] --
-local profileContainer = Instance.new("Frame")
-profileContainer.Name = "UserProfile"
-profileContainer.Size = UDim2.new(0, 155, 0, 36)
-profileContainer.AnchorPoint = Vector2.new(1, 0.5) 
-profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
-profileContainer.BackgroundColor3 = C_BG 
-profileContainer.BorderSizePixel = 0
-profileContainer.ZIndex = 12 
-profileContainer.Parent = headerFrame
-
-local profileCorner = Instance.new("UICorner")
-profileCorner.CornerRadius = UDim.new(0, 6) 
-profileCorner.Parent = profileContainer
-
-local profileStroke = Instance.new("UIStroke")
-profileStroke.Color = C_STROKE 
-profileStroke.Thickness = 1
-profileStroke.Parent = profileContainer
-
-local avatarImage = Instance.new("ImageLabel")
-avatarImage.Name = "Avatar"
-avatarImage.Size = UDim2.new(0, 28, 0, 28)
-avatarImage.Position = UDim2.new(0, 4, 0.5, 0) 
-avatarImage.AnchorPoint = Vector2.new(0, 0.5)
-avatarImage.BackgroundColor3 = C_CARD_BG
-avatarImage.BackgroundTransparency = 1
-avatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=150&h=150"
-avatarImage.ZIndex = 13 
-avatarImage.Parent = profileContainer
-
-local avatarCorner = Instance.new("UICorner")
-avatarCorner.CornerRadius = UDim.new(1, 0)
-avatarCorner.Parent = avatarImage
-
-local nameLabel = Instance.new("TextLabel")
-nameLabel.Name = "Username"
-nameLabel.Size = UDim2.new(1, -40, 1, 0)
-nameLabel.Position = UDim2.new(0, 38, 0, 0)
-nameLabel.BackgroundTransparency = 1
-nameLabel.Text = player.Name 
-nameLabel.TextColor3 = C_TEXT
-nameLabel.Font = Enum.Font.GothamMedium
-nameLabel.TextSize = 13
-nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-nameLabel.ZIndex = 13 
-nameLabel.Parent = profileContainer
-
--- [[ LINES (Separators) ]] --
-local line2 = Instance.new("Frame") 
-line2.Size = UDim2.new(1, 0, 0, 1)
-line2.Position = UDim2.new(0, 0, 0, 60)
-line2.BackgroundColor3 = C_STROKE
-line2.BorderSizePixel = 0
-line2.Parent = mainFrame
-
-local line = Instance.new("Frame") 
-line.Size = UDim2.new(0, 1, 1, -60)
-line.Position = UDim2.new(0, 300, 0, 60)
-line.BackgroundColor3 = C_STROKE
-line.BorderSizePixel = 0
-line.Parent = mainFrame
-
-local line3 = Instance.new("Frame") 
-line3.Size = UDim2.new(0, 1, 1, -60)
-line3.Position = UDim2.new(0, 600, 0, 60)
-line3.BackgroundColor3 = C_STROKE
-line3.BorderSizePixel = 0
-line3.Parent = mainFrame
-
--- ============================================================================
--- [[ HELPER: CONTENT BLOCK CREATOR ]]
--- ============================================================================
-local function CreateContentBlock(parent, name, position, size, title)
-    -- Main Container
-    local Block = Instance.new("Frame")
-    Block.Name = name
-    Block.Parent = parent
-    Block.BackgroundColor3 = Color3.new(1, 1, 1) 
-    Block.Position = position
-    Block.Size = size
-    Block.BorderSizePixel = 0
-    Block.ClipsDescendants = true 
-    
-    local Gradient = Instance.new("UIGradient")
-    Gradient.Rotation = 45 
-    Gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, C_BLOCK_BG),              
-        ColorSequenceKeypoint.new(1, C_BLOCK_GRADIENT_BOTTOM)  
-    }
-    Gradient.Parent = Block
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
-    Corner.Parent = Block
-    
-    -- Block Header
-    local BlockHead = Instance.new("Frame")
-    BlockHead.Name = "BlockHeader"
-    BlockHead.Parent = Block
-    BlockHead.BackgroundColor3 = C_BLOCK_HEADER 
-    BlockHead.Size = UDim2.new(1, 0, 0, 32)
-    BlockHead.BorderSizePixel = 0
-    
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 10)
-    HeaderCorner.Parent = BlockHead
-
-    local HeaderPatch = Instance.new("Frame")
-    HeaderPatch.Parent = BlockHead
-    HeaderPatch.BackgroundColor3 = C_BLOCK_HEADER
-    HeaderPatch.Size = UDim2.new(1, 0, 0, 5)
-    HeaderPatch.Position = UDim2.new(0, 0, 1, -5)
-    HeaderPatch.BorderSizePixel = 0
-    
-    -- Title
-    local HeadTitle = Instance.new("TextLabel")
-    HeadTitle.Parent = BlockHead
-    HeadTitle.Size = UDim2.new(1, 0, 1, 0) 
-    HeadTitle.Position = UDim2.new(0, 0, 0, 0)
-    HeadTitle.BackgroundTransparency = 1
-    HeadTitle.Text = title
-    HeadTitle.Font = Enum.Font.GothamBold
-    HeadTitle.TextSize = 13
-    HeadTitle.TextColor3 = C_TEXT 
-    HeadTitle.TextXAlignment = Enum.TextXAlignment.Center 
-    HeadTitle.ZIndex = 2
-    
-    -- Accent Line
-    local AccentLine = Instance.new("Frame")
-    AccentLine.Name = "AccentLine"
-    AccentLine.Parent = Block
-    AccentLine.BackgroundColor3 = C_STROKE 
-    AccentLine.Size = UDim2.new(1, 0, 0, 1) 
-    AccentLine.Position = UDim2.new(0, 0, 0, 32) 
-    AccentLine.BorderSizePixel = 0
-    AccentLine.ZIndex = 2
-    
-    -- Content Container
-    local Content = Instance.new("ScrollingFrame") 
-    Content.Name = "Content"
-    Content.Parent = Block
-    Content.BackgroundTransparency = 1
-    Content.Size = UDim2.new(1, 0, 1, -33) 
-    Content.Position = UDim2.new(0, 0, 0, 33) 
-    Content.BorderSizePixel = 0
-    Content.ScrollBarThickness = 3
-    Content.ScrollBarImageColor3 = C_ACCENT
-    
-    -- UI List Layout for features
-    local Layout = Instance.new("UIListLayout")
-    Layout.Parent = Content
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
-    Layout.Padding = UDim.new(0, 8)
-    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    
-    local Padding = Instance.new("UIPadding")
-    Padding.PaddingTop = UDim.new(0, 10)
-    Padding.Parent = Content
-    
-    return Block, Content
-end
-
--- ============================================================================
--- [[ HELPER: ROUNDED TOGGLE FUNCTION ]]
--- ============================================================================
-local function CreateFunctionToggle(parent, name, callback)
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Name = name
-    ToggleBtn.Parent = parent
-    ToggleBtn.BackgroundColor3 = C_BG
-    ToggleBtn.Size = UDim2.new(0.9, 0, 0, 35)
-    ToggleBtn.Font = Enum.Font.GothamMedium
-    ToggleBtn.Text = name
-    ToggleBtn.TextColor3 = C_TEXT_DIM
-    ToggleBtn.TextSize = 13
-    ToggleBtn.AutoButtonColor = false
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8) -- Rounded corners
-    Corner.Parent = ToggleBtn
-    
-    local Stroke = Instance.new("UIStroke")
-    Stroke.Color = C_STROKE
-    Stroke.Thickness = 1.2
-    Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    Stroke.Parent = ToggleBtn
-    
-    local Status = Instance.new("Frame")
-    Status.Name = "Status"
-    Status.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    Status.Size = UDim2.new(0, 8, 0, 8)
-    Status.Position = UDim2.new(1, -20, 0.5, 0)
-    Status.AnchorPoint = Vector2.new(0, 0.5)
-    Status.Parent = ToggleBtn
-    
-    local StatusCorner = Instance.new("UICorner")
-    StatusCorner.CornerRadius = UDim.new(1, 0)
-    StatusCorner.Parent = Status
-
-    local toggled = false
-    
-    -- Hover Logic (Accent Stroke)
-    ToggleBtn.MouseEnter:Connect(function()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = C_ACCENT}):Play()
-        if not toggled then
-             TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT}):Play()
-        end
-    end)
-    
-    ToggleBtn.MouseLeave:Connect(function()
-        TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = C_STROKE}):Play()
-         if not toggled then
-             TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play()
-        end
-    end)
-    
-    -- Click Logic
-    ToggleBtn.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        
-        if toggled then
-            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_BLOCK_HEADER, TextColor3 = C_TEXT}):Play()
-            TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = C_ACCENT}):Play()
-            SendNotification("Toggle", name .. " Enabled", 1.5)
-        else
-            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C_BG, TextColor3 = C_TEXT_DIM}):Play()
-            TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}):Play()
-            SendNotification("Toggle", name .. " Disabled", 1.5)
-        end
-        
-        if callback then callback(toggled) end
-    end)
-end
-
--- ============================================================================
--- [[ GENERATE BLOCKS (GUI LAYOUT) ]]
--- ============================================================================
-
-local VisualsBlock, VisualsContent = CreateContentBlock(mainFrame, "LeftContainer", UDim2.new(0, 15, 0, 75), UDim2.new(0, 270, 1, -90), "Visuals")
-local MovementBlock, MovementContent = CreateContentBlock(mainFrame, "MiddleContainer", UDim2.new(0, 315, 0, 75), UDim2.new(0, 270, 1, -90), "Movement")
-local FeaturesBlock, FeaturesContent = CreateContentBlock(mainFrame, "RightContainer", UDim2.new(0, 615, 0, 75), UDim2.new(0, 270, 1, -90), "Features")
-
-
---[[ SMOOTH DRAG SYSTEM ]]
-local dragging, dragInput, dragStart, startPos
-local DRAG_SPEED = 0.15
-
-local function update(input)
-    if not mainFrame or not mainFrame.Parent then return end
-    local delta = input.Position - dragStart
-    local targetPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    TweenService:Create(mainFrame, TweenInfo.new(DRAG_SPEED, Enum.EasingStyle.Sine), {Position = targetPos}):Play()
-end
-
-mainFrame.InputBegan:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
-    end
-end)
-
-mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then update(input) end
-end)
-
-
---[[ SYSTEM: ANIMATION & DESTRUCT (NO CURSOR LOCK) ]]
-local isMenuOpen = false
-local isAnimating = false
-
-local OPEN_SIZE = UDim2.new(0, 900, 0, 600)
-local CLOSED_SIZE = UDim2.new(0, 0, 0, 0)
-
-local function toggleMenu()
-    if isAnimating or not mainFrame or not mainFrame.Parent then return end
-    isAnimating = true
-
-    if isMenuOpen then
-        -- CLOSING
-        TweenService:Create(blurEffect, TweenInfo.new(0.4, Enum.EasingStyle.Sine), {Size = 0}):Play() 
-        local tween = TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = CLOSED_SIZE})
-        tween:Play()
-        tween.Completed:Wait()
-        if mainFrame then mainFrame.Visible = false end
-        isMenuOpen = false
-    else
-        -- OPENING
-        if mainFrame then mainFrame.Visible = true end
-        
-        TweenService:Create(blurEffect, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {Size = 24}):Play() 
-        local tween = TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = OPEN_SIZE})
-        tween:Play()
-        isMenuOpen = true
-    end
-    
-    isAnimating = false
-end
-
-local inputConnection
-inputConnection = UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end 
-
-    if input.KeyCode == Enum.KeyCode.Home then
-        toggleMenu()
-
-    elseif input.KeyCode == Enum.KeyCode.Insert then
-        SendNotification("System", "Uninjecting software... Hope you enjoyed!", 3)
-        if inputConnection then inputConnection:Disconnect() end
-        task.delay(1, function()
-            if blurEffect then blurEffect:Destroy() end
-            if screenGui then screenGui:Destroy() end
-        end)
-    end
-end)
-
--- Initial Open
-toggleMenu()
-
-CreateFuncButton("Close", function()
-toggleMenu()
-end)
-
--- 30 Seconds Duration
-SendNotification("Anonbound", "Welcome, " .. player.Name .. ".", 30)
-SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
-
--- ============================================================================
--- [[ INTRO MUSIC ]]
--- ============================================================================
-
-local function PlayIntroMusic()
-    local sound = Instance.new("Sound")
-    sound.Name = "WakeIntroMusic"
-    -- Ниже в кавычках вставь ID своей музыки.
-    -- Сейчас стоит пример (Phonk/Dark стиль, который подходит под тему):
-    sound.SoundId = "rbxassetid://111174530730534" 
-    sound.Volume = 5.5 -- Громкость (от 0 до 10)
-    sound.Looped = false -- false = играть 1 раз, true = бесконечно
-    sound.Parent = game:GetService("SoundService")
-    
-    if not sound.IsLoaded then
-        sound.Loaded:Wait()
-    end
-    
-    sound:Play()
-    
-    -- Очистка после завершения трека
-    sound.Ended:Connect(function()
-        sound:Destroy()
-    end)
-end
-
-task.spawn(PlayIntroMusic)
-
-
--- ============================================================================
--- [[ GITHUB LOADER & LOGIC ]]
--- ============================================================================
-
--- 1. Helper to fetch raw code (DOES NOT RUN IMMEDIATELY)
-local function GetRawCode(url)
-    if url == "" then return nil end
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-    if success then
-        return result
-    else
-        warn("Failed to fetch script: " .. url)
-        return nil
-    end
-end
-
--- 2. PASTE YOUR GITHUB LINKS HERE
-local LINKS = {
-    Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark", -- Your Watermark Link here
-    SpeedHack   = "", 
-    AntiAFK = "" 
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService") -- Опционально, если захочешь плавность
+
+-- State
+local enabled = false
+local connection = nil
+
+-- Хранилище оригинальных настроек
+local originalSettings = {
+    FogColor = Lighting.FogColor,
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    GlobalShadows = Lighting.GlobalShadows
 }
 
-local Watermark_Code= GetRawCode(LINKS.Watermark)
-local Speed_Code    = GetRawCode(LINKS.SpeedHack)
-local AntiAFK_Code  = GetRawCode(LINKS.AntiAFK)
+-- [[ LOGIC ]]
 
--- 4. LOGIC ENGINE
-local ActiveCleanups = {}
-
-local function RunScript(code, isActive, featureName)
-    -- TURN OFF
-    if not isActive then
-        if ActiveCleanups[featureName] then
-            -- Run the custom cleanup function returned by the script
-            pcall(ActiveCleanups[featureName])
-            ActiveCleanups[featureName] = nil
-        else
-            -- Fallback: Try to find a GUI with a matching name if no cleanup was provided
-            local checkGui = game.CoreGui:FindFirstChild(featureName) or game.CoreGui:FindFirstChild(featureName.."_Holder")
-            if checkGui then checkGui:Destroy() end
-        end
-        return
-    end
-
-    -- TURN ON
-    if code then
-        local func, err = loadstring(code)
-        if func then
-            -- Execute the script
-            local cleanupAction = func()
-            
-            -- If the script returns a function, store it for later cleanup
-            if type(cleanupAction) == "function" then
-                ActiveCleanups[featureName] = cleanupAction
-            end
-        else
-            warn("Error loading script: " .. err)
-        end
+local function SaveOriginalSettings()
+    -- Сохраняем текущие настройки игры, если мы еще не включили режим
+    if not enabled then
+        originalSettings.FogColor = Lighting.FogColor
+        originalSettings.FogStart = Lighting.FogStart
+        originalSettings.FogEnd = Lighting.FogEnd
+        originalSettings.Ambient = Lighting.Ambient
+        originalSettings.OutdoorAmbient = Lighting.OutdoorAmbient
+        originalSettings.Brightness = Lighting.Brightness
+        originalSettings.ClockTime = Lighting.ClockTime
+        originalSettings.GlobalShadows = Lighting.GlobalShadows
     end
 end
 
+local function RestoreSettings()
+    Lighting.FogColor = originalSettings.FogColor
+    Lighting.FogStart = originalSettings.FogStart
+    Lighting.FogEnd = originalSettings.FogEnd
+    Lighting.Ambient = originalSettings.Ambient
+    Lighting.OutdoorAmbient = originalSettings.OutdoorAmbient
+    Lighting.Brightness = originalSettings.Brightness
+    Lighting.ClockTime = originalSettings.ClockTime
+    Lighting.GlobalShadows = originalSettings.GlobalShadows
+end
 
--- 5. CREATE BUTTONS
+local function EnableNightFog()
+    -- Если в игре есть объект Atmosphere, он может мешать туману. 
+    -- Мы его временно выключаем или делаем прозрачным, если нужно жесткое управление.
+    for _, child in pairs(Lighting:GetChildren()) do
+        if child:IsA("Atmosphere") then
+            -- Можно либо удалить, либо отключить. Для сохранности просто не трогаем,
+            -- но знай: Atmosphere перекрывает FogColor.
+            -- child.Parent = nil -- (раскомментируй, если туман не того цвета)
+        end
+    end
 
+    Lighting.FogColor = C_FOG
+    Lighting.FogStart = FOG_START
+    Lighting.FogEnd = FOG_END
+    Lighting.Ambient = C_AMBIENT
+    Lighting.OutdoorAmbient = C_OUTDOOR
+    Lighting.Brightness = BRIGHTNESS
+    Lighting.ClockTime = CLOCK_TIME
+    Lighting.GlobalShadows = true
+end
 
-CreateFunctionToggle(VisualsContent, "Watermark", function(state)
-    RunScript(Watermark_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
+-- Основной цикл (Loop)
+-- Используем RenderStepped, чтобы настройки не сбрасывались игровыми скриптами
+connection = RunService.RenderStepped:Connect(function()
+    if enabled then
+        -- Постоянно форсируем наши настройки, чтобы игра не вернула день
+        if Lighting.FogEnd ~= FOG_END or Lighting.ClockTime ~= CLOCK_TIME then
+            EnableNightFog()
+        end
+    end
 end)
 
--- [MOVEMENT TAB]
---CreateFunctionToggle(MovementContent, "Test Function in movement!", function(state)
---     RunScript(Speed_Code1, state, "SpeedHack")
---end)
-
--- [FEATURES TAB]
-CreateFunctionToggle(FeaturesContent, "Anti AFK", function(state)
-    RunScript(Clicker_Code, state, "AntiAFK")
+-- Обработка нажатия клавиши
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
+        enabled = not enabled
+        
+        if enabled then
+            SaveOriginalSettings()
+            EnableNightFog()
+            print("[SCRIPT] Night Fog Enabled")
+        else
+            RestoreSettings()
+            print("[SCRIPT] Night Fog Disabled")
+        end
+    end
 end)
+
+-- [[ CLEANUP ]]
+-- Возвращает функцию для чистого удаления скрипта (например, если перезапускаешь его через executor)
+return function()
+    if connection then connection:Disconnect() end
+    RestoreSettings()
+end
