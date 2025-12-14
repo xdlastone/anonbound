@@ -1,0 +1,61 @@
+return function()
+    -- [[ ЗАПИСЬ СТАРЫХ НАСТРОЕК ]] --
+    local Lighting = game:GetService("Lighting")
+    local OldSky = Lighting:FindFirstChildOfClass("Sky")
+    local OldAtmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+    
+    -- Сохраняем значения Lighting, чтобы вернуть их позже
+    local oldProps = {
+        ClockTime = Lighting.ClockTime,
+        Brightness = Lighting.Brightness,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        Ambient = Lighting.Ambient,
+        FogColor = Lighting.FogColor,
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart
+    }
+
+    -- [[ УДАЛЕНИЕ СТАРОГО ]] --
+    if OldSky then OldSky.Parent = nil end
+    -- Мы не удаляем атмосферу, а просто меняем ее настройки, если она есть, или добавляем свою
+
+    -- [[ СОЗДАНИЕ НОВОГО НЕБА (Закат) ]] --
+    local NewSky = Instance.new("Sky")
+    NewSky.Name = "AnonboundSunset"
+    NewSky.SkyboxBk = "http://www.roblox.com/asset/?id=600830446"
+    NewSky.SkyboxDn = "http://www.roblox.com/asset/?id=600831635"
+    NewSky.SkyboxFt = "http://www.roblox.com/asset/?id=600832720"
+    NewSky.SkyboxLf = "http://www.roblox.com/asset/?id=600886090"
+    NewSky.SkyboxRt = "http://www.roblox.com/asset/?id=600833862"
+    NewSky.SkyboxUp = "http://www.roblox.com/asset/?id=600835177"
+    NewSky.SunTextureId = "http://www.roblox.com/asset/?id=2680343361"
+    NewSky.MoonTextureId = "http://www.roblox.com/asset/?id=2680343361" 
+    NewSky.StarCount = 3000
+    NewSky.Parent = Lighting
+
+    -- [[ НАСТРОЙКА ОСВЕЩЕНИЯ ]] --
+    Lighting.ClockTime = 17.8 -- Вечернее время
+    Lighting.Brightness = 1.5
+    Lighting.OutdoorAmbient = Color3.fromRGB(100, 50, 80) -- Фиолетовый оттенок
+    Lighting.Ambient = Color3.fromRGB(60, 40, 60)
+    Lighting.FogColor = Color3.fromRGB(80, 50, 70)
+    Lighting.FogEnd = 10000 -- Дальность тумана
+    
+    -- [[ ФУНКЦИЯ CLEANUP (ВОЗВРАТ) ]] --
+    -- Эта функция вызовется, когда ты отожмешь кнопку в GUI
+    return function()
+        if NewSky then NewSky:Destroy() end
+        
+        -- Возвращаем старое небо, если оно было
+        if OldSky then OldSky.Parent = Lighting end
+        
+        -- Возвращаем настройки света
+        Lighting.ClockTime = oldProps.ClockTime
+        Lighting.Brightness = oldProps.Brightness
+        Lighting.OutdoorAmbient = oldProps.OutdoorAmbient
+        Lighting.Ambient = oldProps.Ambient
+        Lighting.FogColor = oldProps.FogColor
+        Lighting.FogEnd = oldProps.FogEnd
+        Lighting.FogStart = oldProps.FogStart
+    end
+end
