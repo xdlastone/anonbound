@@ -1,72 +1,72 @@
+local Players = game:GetService("Players")
+local connections = {}
+
+-- [[ 1. ФУНКЦИИ ЛОГИКИ ]] --
+
+local function setTransparency(part)
+    if part:IsA("BasePart") then
+        -- HumanoidRootPart всегда скрываем полностью
+        if part.Name == "HumanoidRootPart" then
+            part.Transparency = 1
+        -- Остальные части делаем полупрозрачными
+        else
+            part.Transparency = 0.5
+        end
+    end
+end
+
+local function onCharacter(character)
+    if not character then return end
+    
+    -- Меняем прозрачность у существующих частей
+    for _, part in pairs(character:GetDescendants()) do
+        setTransparency(part)
+    end
+
+    -- Следим за новыми частями (аксессуары/броня)
+    local conn = character.DescendantAdded:Connect(function(descendant)
+        task.wait() -- Ждем применения дефолтных настроек роблокса
+        setTransparency(descendant)
+    end)
+    table.insert(connections, conn)
+end
+
+-- [[ 2. ЗАПУСК (ВКЛЮЧЕНИЕ) ]] --
+
+-- Проходимся по всем игрокам, которые уже есть
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        onCharacter(player.Character)
+    end
+    -- Подписываемся на их респавн
+    local conn = player.CharacterAdded:Connect(onCharacter)
+    table.insert(connections, conn)
+end
+
+-- Подписываемся на вход новых игроков
+local addedConn = Players.PlayerAdded:Connect(function(player)
+    local conn = player.CharacterAdded:Connect(onCharacter)
+    table.insert(connections, conn)
+end)
+table.insert(connections, addedConn)
+
+-- [[ 3. ВОЗВРАТ ФУНКЦИИ ОЧИСТКИ (ВЫКЛЮЧЕНИЕ) ]] --
+
 return function()
-    local Players = game:GetService("Players")
-    local connections = {}
-
-    -- Функция изменения прозрачности
-    local function setTransparency(part)
-        if part:IsA("BasePart") then
-            -- Если это RootPart (квадрат в центре), делаем его всегда невидимым (1)
-            if part.Name == "HumanoidRootPart" then
-                part.Transparency = 1
-            else
-                -- Все остальные части тела (руки, ноги, аксессуары) делаем полупрозрачными
-                part.Transparency = 0.5
-            end
-        end
+    -- Отключаем все события (чтобы новые игроки/части не становились прозрачными)
+    for _, conn in pairs(connections) do
+        if conn then conn:Disconnect() end
     end
-
-    -- Применяем к персонажу
-    local function onCharacter(character)
-        if not character then return end
-        
-        -- Обрабатываем уже существующие части
-        for _, part in pairs(character:GetDescendants()) do
-            setTransparency(part)
-        end
-
-        -- Слушаем появление новых частей (например, если броня прогрузилась позже)
-        local conn = character.DescendantAdded:Connect(function(descendant)
-            -- Ждем мгновение, чтобы Roblox успел применить свои свойства, и переписываем их
-            task.wait() 
-            setTransparency(descendant)
-        end)
-        table.insert(connections, conn)
-    end
-
-    -- 1. Запускаем для всех текущих игроков
+    
+    -- Возвращаем видимость как было
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character then
-            onCharacter(player.Character)
-        end
-        -- Слушаем респавн
-        local conn = player.CharacterAdded:Connect(onCharacter)
-        table.insert(connections, conn)
-    end
-
-    -- 2. Слушаем вход новых игроков
-    local addedConn = Players.PlayerAdded:Connect(function(player)
-        local conn = player.CharacterAdded:Connect(onCharacter)
-        table.insert(connections, conn)
-    end)
-    table.insert(connections, addedConn)
-
-    -- ФУНКЦИЯ ВЫКЛЮЧЕНИЯ (CLEANUP)
-    return function()
-        -- 1. Отключаем слежку за новыми частями/игроками
-        for _, conn in pairs(connections) do
-            conn:Disconnect()
-        end
-        
-        -- 2. Возвращаем нормальный вид всем игрокам
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        if part.Name == "HumanoidRootPart" then
-                            part.Transparency = 1 -- Скрываем квадрат
-                        else
-                            part.Transparency = 0 -- Делаем тело полностью видимым
-                        end
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if part.Name == "HumanoidRootPart" then
+                        part.Transparency = 1
+                    else
+                        part.Transparency = 0 -- Возвращаем полную видимость
                     end
                 end
             end
