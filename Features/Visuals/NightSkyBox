@@ -1,59 +1,30 @@
 -- [[ CONFIGURATION ]] 
-local TOGGLE_KEY = Enum.KeyCode.RightControl
 local NIGHT_TIME = 0 -- 00:00 (Полночь)
 
 -- Services
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
 
--- State
-local enabled = true
-local connection = nil
+-- 1. Сохраняем оригинальное время перед изменением
 local originalTime = Lighting.ClockTime
 
--- [[ LOGIC ]]
-
-local function SaveOriginalTime()
-    if not enabled then
-        originalTime = Lighting.ClockTime
-    end
-end
-
-local function RestoreTime()
-    Lighting.ClockTime = originalTime
-end
-
+-- 2. Функция установки ночи
 local function SetNight()
     Lighting.ClockTime = NIGHT_TIME
 end
 
--- Основной цикл (Loop)
--- Форсируем ночь, чтобы другие скрипты игры не вернули день
-connection = RunService.RenderStepped:Connect(function()
-    if enabled then
-        if Lighting.ClockTime ~= NIGHT_TIME then
-            SetNight()
-        end
+-- 3. Применяем сразу при запуске
+SetNight()
+
+-- 4. Запускаем цикл (чтобы игра не сменила время обратно)
+local connection = RunService.RenderStepped:Connect(function()
+    if Lighting.ClockTime ~= NIGHT_TIME then
+        SetNight()
     end
 end)
 
--- Обработка нажатия клавиши
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
-        enabled = not enabled
-        
-        if enabled then
-            SaveOriginalTime()
-            SetNight()
-        else
-            RestoreTime()
-        end
-    end
-end)
-
--- [[ CLEANUP ]]
+-- 5. ВАЖНО: Возвращаем функцию очистки для твоей базы
 return function()
     if connection then connection:Disconnect() end
-    RestoreTime()
+    Lighting.ClockTime = originalTime -- Возвращаем время как было
 end
