@@ -17,7 +17,7 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 
 -- State
-local enabled = false
+local enabled = true
 local connection = nil
 local inputConnection = nil
 
