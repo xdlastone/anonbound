@@ -885,13 +885,13 @@ local function GetRawCode(url)
     end
 end
 
--- 2. PASTE YOUR GITHUB LINKS HERE
 local LINKS = {
     Watermark   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/GUI/Watermark",
     NightMode   = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/CustomFog", 
 	NightSkyBox = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/NightSkyBox",
     SpeedHack   = "", 
-    AntiAFK = "" 
+    AntiAFK = "", 
+	InvisibleModel = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/Features/Visuals/InvisibleModel"
 }
 
 local Watermark_Code= GetRawCode(LINKS.Watermark)
@@ -899,6 +899,7 @@ local Speed_Code    = GetRawCode(LINKS.SpeedHack)
 local AntiAFK_Code  = GetRawCode(LINKS.AntiAFK)
 local NightMode_Code = GetRawCode(LINKS.NightMode)
 local NightSkyBox_Code = GetRawCode(LINKS.NightSkyBox)
+local InvisibleModel_Code = GetRawCode(LINKS.InvisibleModel)
 
 -- 4. LOGIC ENGINE
 local ActiveCleanups = {}
@@ -949,6 +950,10 @@ end)
 
 CreateFunctionToggle(VisualsContent, "No Skybox", function(state)
     RunScript(NightSkyBox_Code, state, "NightSkyBox_Feature") 
+end)
+
+CreateFunctionToggle(VisualsContent, "InvisibleModel", function(state)
+    RunScript(InvisibleModel_Code, state, "IM_Feature") 
 end)
 
 -- [MOVEMENT TAB]
