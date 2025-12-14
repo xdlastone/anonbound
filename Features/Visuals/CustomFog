@@ -1,27 +1,18 @@
 -- [[ CONFIGURATION ]] 
-local TOGGLE_KEY      = Enum.KeyCode.RightControl
-
--- Настройки "тусклости" и фога
--- Я подобрал цвета так, чтобы они затемняли мир, не меняя время суток
+-- Настройки атмосферы (Night / Dim Mode)
 local C_FOG           = Color3.fromHex("#18181c") -- Темно-серый туман
-local C_AMBIENT       = Color3.fromHex("#2a2a30") -- Темные тени (Indoor)
-local C_OUTDOOR       = Color3.fromHex("#1a1a20") -- Темное внешнее освещение (Outdoor)
+local C_AMBIENT       = Color3.fromHex("#2a2a30") -- Темные тени
+local C_OUTDOOR       = Color3.fromHex("#1a1a20") -- Темное внешнее освещение
 
-local FOG_END         = 300   -- Дистанция прорисовки (чем меньше, тем гуще)
-local FOG_START       = 0     -- Туман начинается прямо от камеры
-local BRIGHTNESS      = 0.5   -- Пониженная яркость (стандарт обычно 2 или 3), но не 0, чтобы видеть детали
+local FOG_END         = 300   -- Дальность прорисовки
+local FOG_START       = 0     -- Начало тумана
+local BRIGHTNESS      = 0.5   -- Пониженная яркость
 
 -- Services
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
 
--- State
-local enabled = true
-local connection = nil
-local inputConnection = nil
-
--- Хранилище оригинальных настроек (без времени!)
+-- Хранилище оригинальных настроек
 local originalSettings = {
     FogColor = Lighting.FogColor,
     FogStart = Lighting.FogStart,
@@ -32,20 +23,18 @@ local originalSettings = {
     GlobalShadows = Lighting.GlobalShadows
 }
 
--- [[ LOGIC ]]
-
-local function SaveOriginalSettings()
-    if not enabled then
-        originalSettings.FogColor = Lighting.FogColor
-        originalSettings.FogStart = Lighting.FogStart
-        originalSettings.FogEnd = Lighting.FogEnd
-        originalSettings.Ambient = Lighting.Ambient
-        originalSettings.OutdoorAmbient = Lighting.OutdoorAmbient
-        originalSettings.Brightness = Lighting.Brightness
-        originalSettings.GlobalShadows = Lighting.GlobalShadows
-    end
+-- Функция включения
+local function ApplyCustomFog()
+    Lighting.FogColor = C_FOG
+    Lighting.FogStart = FOG_START
+    Lighting.FogEnd = FOG_END
+    Lighting.Ambient = C_AMBIENT
+    Lighting.OutdoorAmbient = C_OUTDOOR
+    Lighting.Brightness = BRIGHTNESS
+    Lighting.GlobalShadows = true
 end
 
+-- Функция восстановления
 local function RestoreSettings()
     Lighting.FogColor = originalSettings.FogColor
     Lighting.FogStart = originalSettings.FogStart
@@ -56,46 +45,19 @@ local function RestoreSettings()
     Lighting.GlobalShadows = originalSettings.GlobalShadows
 end
 
-local function ApplyCustomFog()
-    -- Применяем только туман и яркость
-    Lighting.FogColor = C_FOG
-    Lighting.FogStart = FOG_START
-    Lighting.FogEnd = FOG_END
-    Lighting.Ambient = C_AMBIENT
-    Lighting.OutdoorAmbient = C_OUTDOOR
-    Lighting.Brightness = BRIGHTNESS
-    Lighting.GlobalShadows = true
-end
+-- Включаем сразу при запуске скрипта
+ApplyCustomFog()
 
--- Основной цикл (Loop)
--- Форсируем настройки фога, чтобы игра их не сбрасывала, но НЕ трогаем ClockTime
-connection = RunService.RenderStepped:Connect(function()
-    if enabled then
-        if Lighting.FogEnd ~= FOG_END or Lighting.Brightness ~= BRIGHTNESS then
-            ApplyCustomFog()
-        end
+-- Loop для поддержания настроек (чтобы игра не сбросила их)
+local connection = RunService.RenderStepped:Connect(function()
+    if Lighting.FogEnd ~= FOG_END or Lighting.Brightness ~= BRIGHTNESS then
+        ApplyCustomFog()
     end
 end)
 
--- Обработка нажатия клавиши
-inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == TOGGLE_KEY then
-        enabled = not enabled
-        
-        if enabled then
-            SaveOriginalSettings()
-            ApplyCustomFog()
-            print("[FOG SCRIPT] Custom Fog: ON")
-        else
-            RestoreSettings()
-            print("[FOG SCRIPT] Custom Fog: OFF")
-        end
-    end
-end)
-
--- [[ CLEANUP ]]
+-- [[ ВОЗВРАЩАЕМ CLEANUP ]]
+-- Эта функция вызовется твоим GUI, когда ты нажмешь кнопку выключения
 return function()
     if connection then connection:Disconnect() end
-    if inputConnection then inputConnection:Disconnect() end
     RestoreSettings()
 end
