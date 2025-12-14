@@ -947,8 +947,7 @@ CreateFunctionToggle(VisualsContent, "Night Mode", function(state)
     RunScript(NightMode_Code, state, "NightModeFeature") -- "MyWatermark" should match the GUI name
 end)
 
-CreateFunctionToggle(VisualsContent, "Night Skybox", function(state)
-    -- Убедись, что 3-й аргумент (ID) уникален! Не "MyWatermark".
+CreateFunctionToggle(VisualsContent, "No Skybox", function(state)
     RunScript(NightSkyBox_Code, state, "NightSkyBox_Feature") 
 end)
 
