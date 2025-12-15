@@ -6,6 +6,7 @@ local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
+local Debris = game:GetService("Debris") -- Добавлен сервис Debris для очистки тултипов
 
 -- [[ CONFIGURATION: COLORS ]] --
 local C_BG          = Color3.fromHex("#14141e") 
@@ -146,6 +147,103 @@ local function SendNotification(title, text, duration)
         end
         if Container then Container:Destroy() end
     end)
+end
+
+-- ============================================================================
+-- [[ TOOLTIP SYSTEM (NEW) ]]
+-- ============================================================================
+local currentTooltip = nil
+
+local function ShowTooltip(text, targetButton)
+    -- Удаляем старый тултип, если он есть
+    if currentTooltip then currentTooltip:Destroy() end
+
+    -- Создаем контейнер подсказки
+    local TooltipFrame = Instance.new("Frame")
+    TooltipFrame.Name = "Tooltip"
+    TooltipFrame.Parent = screenGui -- Важно: кидаем в ScreenGui, чтобы не обрезалось
+    TooltipFrame.BackgroundColor3 = C_BG
+    TooltipFrame.BorderSizePixel = 0
+    TooltipFrame.ZIndex = 100 -- Поверх всего
+    TooltipFrame.AutomaticSize = Enum.AutomaticSize.XY -- Авторазмер под текст
+    
+    -- Скрываем изначально для анимации
+    TooltipFrame.BackgroundTransparency = 1
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = TooltipFrame
+    
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = C_ACCENT
+    Stroke.Thickness = 1
+    Stroke.Transparency = 1
+    Stroke.Parent = TooltipFrame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Parent = TooltipFrame
+    Label.Text = text
+    Label.TextColor3 = C_TEXT
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
+    Label.BackgroundTransparency = 1
+    Label.ZIndex = 101
+    Label.TextTransparency = 1
+    Label.Size = UDim2.new(0, 0, 0, 0)
+    Label.AutomaticSize = Enum.AutomaticSize.XY
+    
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingTop = UDim.new(0, 6)
+    Padding.PaddingBottom = UDim.new(0, 6)
+    Padding.PaddingLeft = UDim.new(0, 10)
+    Padding.PaddingRight = UDim.new(0, 10)
+    Padding.Parent = TooltipFrame
+
+    -- Расчет позиции (Над кнопкой по центру)
+    local btnAbsPos = targetButton.AbsolutePosition
+    local btnAbsSize = targetButton.AbsoluteSize
+    
+    -- Обновляем лайаут, чтобы узнать размер тултипа до рендера
+    TooltipFrame.Visible = false
+    TooltipFrame.Parent = screenGui
+    TooltipFrame.Visible = true
+    
+    local tipSize = TooltipFrame.AbsoluteSize
+    
+    -- Позиция X: Центр кнопки минус половина ширины тултипа
+    local targetX = btnAbsPos.X + (btnAbsSize.X / 2) - (tipSize.X / 2)
+    -- Позиция Y: Над кнопкой с отступом 10 пикселей
+    local targetY = btnAbsPos.Y - tipSize.Y - 10
+    
+    -- Сдвиг для анимации (чуть ниже)
+    TooltipFrame.Position = UDim2.fromOffset(targetX, targetY + 10)
+    
+    -- Анимация появления
+    local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService:Create(TooltipFrame, tInfo, {BackgroundTransparency = 0.1, Position = UDim2.fromOffset(targetX, targetY)}):Play()
+    TweenService:Create(Stroke, tInfo, {Transparency = 0}):Play()
+    TweenService:Create(Label, tInfo, {TextTransparency = 0}):Play()
+    
+    currentTooltip = TooltipFrame
+end
+
+local function HideTooltip()
+    if currentTooltip then
+        local oldTip = currentTooltip
+        currentTooltip = nil
+        
+        -- Анимация исчезновения
+        local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(oldTip, tInfo, {BackgroundTransparency = 1}):Play()
+        if oldTip:FindFirstChild("UIStroke") then
+             TweenService:Create(oldTip.UIStroke, tInfo, {Transparency = 1}):Play()
+        end
+        if oldTip:FindFirstChild("TextLabel") then
+             TweenService:Create(oldTip.TextLabel, tInfo, {TextTransparency = 1}):Play()
+        end
+        
+        Debris:AddItem(oldTip, 0.25)
+    end
 end
 
 -- ============================================================================
@@ -665,9 +763,9 @@ local function CreateContentBlock(parent, name, position, size, title)
 end
 
 -- ============================================================================
--- [[ HELPER: ROUNDED TOGGLE FUNCTION ]]
+-- [[ HELPER: ROUNDED TOGGLE FUNCTION (UPDATED) ]]
 -- ============================================================================
-local function CreateFunctionToggle(parent, name, callback)
+local function CreateFunctionToggle(parent, name, description, callback) 
     local ToggleBtn = Instance.new("TextButton")
     ToggleBtn.Name = name
     ToggleBtn.Parent = parent
@@ -680,7 +778,7 @@ local function CreateFunctionToggle(parent, name, callback)
     ToggleBtn.AutoButtonColor = false
     
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8) -- Rounded corners
+    Corner.CornerRadius = UDim.new(0, 8) 
     Corner.Parent = ToggleBtn
     
     local Stroke = Instance.new("UIStroke")
@@ -703,11 +801,16 @@ local function CreateFunctionToggle(parent, name, callback)
 
     local toggled = false
     
-    -- Hover Logic (Accent Stroke)
+    -- Hover Logic (Accent Stroke + Tooltip)
     ToggleBtn.MouseEnter:Connect(function()
         TweenService:Create(Stroke, TweenInfo.new(0.2), {Color = C_ACCENT}):Play()
         if not toggled then
              TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT}):Play()
+        end
+        
+        -- ПОКАЗЫВАЕМ ПОДСКАЗКУ
+        if description and description ~= "" then
+            ShowTooltip(description, ToggleBtn)
         end
     end)
     
@@ -716,6 +819,9 @@ local function CreateFunctionToggle(parent, name, callback)
          if not toggled then
              TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {TextColor3 = C_TEXT_DIM}):Play()
         end
+        
+        -- СКРЫВАЕМ ПОДСКАЗКУ
+        HideTooltip()
     end)
     
     -- Click Logic
@@ -939,29 +1045,28 @@ end
 
 -- 5. CREATE BUTTONS
 
-
-CreateFunctionToggle(VisualsContent, "Watermark", function(state)
-    RunScript(Watermark_Code, state, "MyWatermark") -- "MyWatermark" should match the GUI name
+CreateFunctionToggle(VisualsContent, "Watermark", "Enables watermark", function(state)
+    RunScript(Watermark_Code, state, "MyWatermark") 
 end)
 
-CreateFunctionToggle(VisualsContent, "Night Mode", function(state)
-    RunScript(NightMode_Code, state, "NightModeFeature") -- "MyWatermark" should match the GUI name
+CreateFunctionToggle(VisualsContent, "Night Mode", "Turns an ordinary day into a beautiful night", function(state)
+    RunScript(NightMode_Code, state, "NightModeFeature") 
 end)
 
-CreateFunctionToggle(VisualsContent, "No Skybox", function(state)
+CreateFunctionToggle(VisualsContent, "No Skybox", "Make skybox black", function(state)
     RunScript(NightSkyBox_Code, state, "NightSkyBox_Feature") 
 end)
 
-CreateFunctionToggle(VisualsContent, "InvisibleModel", function(state)
+CreateFunctionToggle(VisualsContent, "InvisibleModel", "Makes models semi-invisible", function(state)
     RunScript(InvisibleModel_Code, state, "IM_Feature") 
 end)
 
 -- [MOVEMENT TAB]
---CreateFunctionToggle(MovementContent, "Test Function in movement!", function(state)
+--CreateFunctionToggle(MovementContent, "Test Function in movement!", "Just a test", function(state)
 --     RunScript(Speed_Code1, state, "SpeedHack")
 --end)
 
 -- [FEATURES TAB]
-CreateFunctionToggle(FeaturesContent, "Anti AFK", function(state)
-    RunScript(Clicker_Code, state, "AntiAFK")
+CreateFunctionToggle(FeaturesContent, "Anti AFK", "Prevents getting kicked for inactivity", function(state)
+    RunScript(AntiAFK_Code, state, "AntiAFK") -- Исправлено: Clicker_Code -> AntiAFK_Code
 end)
