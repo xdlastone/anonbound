@@ -1,0 +1,23 @@
+-- [[ ФАЙЛ 2: Конфигурация для Test Function (Сохраните на GitHub) ]] --
+
+-- 1. ЗАГРУЖАЕМ БИБЛИОТЕКУ (Вставьте ссылку из Шага 1 сюда)
+local LibraryUrl = "https://raw.githubusercontent.com/ВАШ_НИК/ВАШ_РЕПО/main/SettingsUI_Library.lua"
+local Lib = loadstring(game:HttpGet(LibraryUrl))().new()
+
+-- 2. НАСТРАИВАЕМ ОКНО
+Lib:SetTitle("Test Function Settings")
+
+-- 3. ДОБАВЛЯЕМ ЭЛЕМЕНТЫ
+Lib:AddToggle("Enable Silent Aim", false, function(state)
+    print("Silent Aim switched to:", state)
+    -- Тут код, который меняет переменную в чите
+    _G.SilentAimEnabled = state 
+end)
+
+Lib:AddToggle("Show FOV Circle", true, function(state)
+    print("FOV Circle:", state)
+end)
+
+Lib:AddSlider("FOV Radius", 10, 500, 150, function(value)
+    print("New FOV:", value)
+end)
