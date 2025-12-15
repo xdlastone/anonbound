@@ -1,7 +1,7 @@
 -- [[ ФАЙЛ 2: Конфигурация для Test Function (Сохраните на GitHub) ]] --
 
 -- 1. ЗАГРУЖАЕМ БИБЛИОТЕКУ (Вставьте ссылку из Шага 1 сюда)
-local LibraryUrl = "https://raw.githubusercontent.com/ВАШ_НИК/ВАШ_РЕПО/main/SettingsUI_Library.lua"
+local LibraryUrl = "https://raw.githubusercontent.com/xdlastone/anonbound/refs/heads/main/utils/UILibrary"
 local Lib = loadstring(game:HttpGet(LibraryUrl))().new()
 
 -- 2. НАСТРАИВАЕМ ОКНО
