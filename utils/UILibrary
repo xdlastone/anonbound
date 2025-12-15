@@ -1,0 +1,196 @@
+-- [[ ФАЙЛ 1: UI LIBRARY (Сохраните на GitHub) ]] --
+local Library = {}
+
+function Library.new()
+    local UI = {}
+    local TweenService = game:GetService("TweenService")
+    local CoreGui = game:GetService("CoreGui")
+
+    -- Удаляем старое окно, если есть
+    if CoreGui:FindFirstChild("ExternalSettings") then
+        CoreGui.ExternalSettings:Destroy()
+    end
+
+    -- Создаем базу GUI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "ExternalSettings"
+    ScreenGui.Parent = CoreGui
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 300, 0, 50) -- Начальный размер, будет расти
+    MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    MainFrame.BackgroundColor3 = Color3.fromHex("#1e1e29")
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.Parent = ScreenGui
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = MainFrame
+    
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Color = Color3.fromHex("#2d2d3d")
+    UIStroke.Thickness = 1
+    UIStroke.Parent = MainFrame
+
+    -- Контейнер для элементов
+    local Container = Instance.new("Frame")
+    Container.Name = "Container"
+    Container.Size = UDim2.new(1, -20, 0, 0)
+    Container.Position = UDim2.new(0, 10, 0, 45)
+    Container.BackgroundTransparency = 1
+    Container.Parent = MainFrame
+
+    local UIList = Instance.new("UIListLayout")
+    UIList.Padding = UDim.new(0, 8)
+    UIList.SortOrder = Enum.SortOrder.LayoutOrder
+    UIList.Parent = Container
+
+    -- Авто-ресайз окна
+    UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        local contentHeight = UIList.AbsoluteContentSize.Y
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {
+            Size = UDim2.new(0, 300, 0, contentHeight + 60)
+        }):Play()
+    end)
+
+    -- Перетаскивание (Drag)
+    local dragging, dragInput, dragStart, startPos
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    MainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- === МЕТОДЫ ===
+
+    function UI:SetTitle(text)
+        local Title = Instance.new("TextLabel")
+        Title.Text = text
+        Title.Font = Enum.Font.GothamBold
+        Title.TextSize = 16
+        Title.TextColor3 = Color3.fromHex("#ffffff")
+        Title.Size = UDim2.new(1, 0, 0, 40)
+        Title.BackgroundTransparency = 1
+        Title.Parent = MainFrame
+        
+        -- Кнопка закрытия
+        local CloseBtn = Instance.new("TextButton")
+        CloseBtn.Text = "X"
+        CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+        CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+        CloseBtn.BackgroundTransparency = 1
+        CloseBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+        CloseBtn.Font = Enum.Font.GothamBold
+        CloseBtn.Parent = MainFrame
+        CloseBtn.MouseButton1Click:Connect(function()
+            ScreenGui:Destroy()
+        end)
+    end
+
+    function UI:AddToggle(text, default, callback)
+        local ToggleBtn = Instance.new("TextButton")
+        ToggleBtn.Size = UDim2.new(1, 0, 0, 35)
+        ToggleBtn.BackgroundColor3 = Color3.fromHex("#2a2a35")
+        ToggleBtn.Text = ""
+        ToggleBtn.AutoButtonColor = false
+        ToggleBtn.Parent = Container
+        Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
+
+        local Label = Instance.new("TextLabel")
+        Label.Text = text
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 14
+        Label.TextColor3 = Color3.fromHex("#ffffff")
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Size = UDim2.new(0.7, 0, 1, 0)
+        Label.Position = UDim2.new(0, 10, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Parent = ToggleBtn
+
+        local Checkbox = Instance.new("Frame")
+        Checkbox.Size = UDim2.new(0, 20, 0, 20)
+        Checkbox.Position = UDim2.new(1, -30, 0.5, -10)
+        Checkbox.BackgroundColor3 = default and Color3.fromHex("#c72d80") or Color3.fromHex("#3a3a45")
+        Checkbox.Parent = ToggleBtn
+        Instance.new("UICorner", Checkbox).CornerRadius = UDim.new(0, 4)
+
+        local enabled = default
+        ToggleBtn.MouseButton1Click:Connect(function()
+            enabled = not enabled
+            TweenService:Create(Checkbox, TweenInfo.new(0.2), {
+                BackgroundColor3 = enabled and Color3.fromHex("#c72d80") or Color3.fromHex("#3a3a45")
+            }):Play()
+            pcall(callback, enabled)
+        end)
+    end
+
+    function UI:AddSlider(text, min, max, default, callback)
+        local SliderFrame = Instance.new("Frame")
+        SliderFrame.Size = UDim2.new(1, 0, 0, 50)
+        SliderFrame.BackgroundColor3 = Color3.fromHex("#2a2a35")
+        SliderFrame.Parent = Container
+        Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+        
+        local Label = Instance.new("TextLabel")
+        Label.Text = text .. ": " .. default
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 14
+        Label.TextColor3 = Color3.fromHex("#ffffff")
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Size = UDim2.new(1, -20, 0, 25)
+        Label.Position = UDim2.new(0, 10, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Parent = SliderFrame
+
+        local SliderBar = Instance.new("TextButton")
+        SliderBar.Text = ""
+        SliderBar.Size = UDim2.new(1, -20, 0, 6)
+        SliderBar.Position = UDim2.new(0, 10, 0, 35)
+        SliderBar.BackgroundColor3 = Color3.fromHex("#3a3a45")
+        SliderBar.AutoButtonColor = false
+        SliderBar.Parent = SliderFrame
+        Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+
+        local Fill = Instance.new("Frame")
+        Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+        Fill.BackgroundColor3 = Color3.fromHex("#c72d80")
+        Fill.Parent = SliderBar
+        Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
+
+        local function Update(input)
+            local pos = input.Position.X
+            local barPos = SliderBar.AbsolutePosition.X
+            local barSize = SliderBar.AbsoluteSize.X
+            local percent = math.clamp((pos - barPos) / barSize, 0, 1)
+            local value = math.floor(min + (max - min) * percent)
+            Label.Text = text .. ": " .. value
+            Fill.Size = UDim2.new(percent, 0, 1, 0)
+            pcall(callback, value)
+        end
+
+        local isDragging = false
+        SliderBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then isDragging = true; Update(i) end end)
+        game:GetService("UserInputService").InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then isDragging = false end end)
+        game:GetService("UserInputService").InputChanged:Connect(function(i) if isDragging and i.UserInputType == Enum.UserInputType.MouseMovement then Update(i) end end)
+    end
+
+    return UI
+end
+
+return Library
