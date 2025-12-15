@@ -6,7 +6,7 @@ local StarterGui = game:GetService("StarterGui")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local Debris = game:GetService("Debris") -- Добавлен сервис Debris для очистки тултипов
+local Debris = game:GetService("Debris")
 
 -- [[ CONFIGURATION: COLORS ]] --
 local C_BG          = Color3.fromHex("#14141e") 
@@ -102,10 +102,6 @@ local function SendNotification(title, text, duration)
     AccentBar.BorderSizePixel = 0
     AccentBar.Parent = Card
     
-    local BarCorner = Instance.new("UICorner") 
-    BarCorner.CornerRadius = UDim.new(0, 4)
-    BarCorner.Parent = AccentBar
-    
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Parent = Card
     TitleLabel.BackgroundTransparency = 1
@@ -150,24 +146,20 @@ local function SendNotification(title, text, duration)
 end
 
 -- ============================================================================
--- [[ TOOLTIP SYSTEM (NEW) ]]
+-- [[ TOOLTIP SYSTEM ]]
 -- ============================================================================
 local currentTooltip = nil
 
 local function ShowTooltip(text, targetButton)
-    -- Удаляем старый тултип, если он есть
     if currentTooltip then currentTooltip:Destroy() end
 
-    -- Создаем контейнер подсказки
     local TooltipFrame = Instance.new("Frame")
     TooltipFrame.Name = "Tooltip"
-    TooltipFrame.Parent = screenGui -- Важно: кидаем в ScreenGui, чтобы не обрезалось
+    TooltipFrame.Parent = screenGui 
     TooltipFrame.BackgroundColor3 = C_BG
     TooltipFrame.BorderSizePixel = 0
-    TooltipFrame.ZIndex = 100 -- Поверх всего
-    TooltipFrame.AutomaticSize = Enum.AutomaticSize.XY -- Авторазмер под текст
-    
-    -- Скрываем изначально для анимации
+    TooltipFrame.ZIndex = 100 
+    TooltipFrame.AutomaticSize = Enum.AutomaticSize.XY 
     TooltipFrame.BackgroundTransparency = 1
     
     local Corner = Instance.new("UICorner")
@@ -199,26 +191,20 @@ local function ShowTooltip(text, targetButton)
     Padding.PaddingRight = UDim.new(0, 10)
     Padding.Parent = TooltipFrame
 
-    -- Расчет позиции (Над кнопкой по центру)
     local btnAbsPos = targetButton.AbsolutePosition
     local btnAbsSize = targetButton.AbsoluteSize
     
-    -- Обновляем лайаут, чтобы узнать размер тултипа до рендера
     TooltipFrame.Visible = false
     TooltipFrame.Parent = screenGui
     TooltipFrame.Visible = true
     
     local tipSize = TooltipFrame.AbsoluteSize
     
-    -- Позиция X: Центр кнопки минус половина ширины тултипа
     local targetX = btnAbsPos.X + (btnAbsSize.X / 2) - (tipSize.X / 2)
-    -- Позиция Y: Над кнопкой с отступом 10 пикселей
     local targetY = btnAbsPos.Y - tipSize.Y - 10
     
-    -- Сдвиг для анимации (чуть ниже)
     TooltipFrame.Position = UDim2.fromOffset(targetX, targetY + 10)
     
-    -- Анимация появления
     local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     TweenService:Create(TooltipFrame, tInfo, {BackgroundTransparency = 0.1, Position = UDim2.fromOffset(targetX, targetY)}):Play()
     TweenService:Create(Stroke, tInfo, {Transparency = 0}):Play()
@@ -232,7 +218,6 @@ local function HideTooltip()
         local oldTip = currentTooltip
         currentTooltip = nil
         
-        -- Анимация исчезновения
         local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         TweenService:Create(oldTip, tInfo, {BackgroundTransparency = 1}):Play()
         if oldTip:FindFirstChild("UIStroke") then
@@ -257,18 +242,28 @@ mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.BackgroundColor3 = C_BG
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.Active = true
-mainFrame.ClipsDescendants = true 
+mainFrame.ClipsDescendants = false 
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
+
+local mainClipFrame = Instance.new("Frame")
+mainClipFrame.Name = "ClipFrame"
+mainClipFrame.Size = UDim2.new(1, 0, 1, 0)
+mainClipFrame.BackgroundTransparency = 1
+mainClipFrame.ClipsDescendants = true
+mainClipFrame.Parent = mainFrame
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+local mainClipCorner = Instance.new("UICorner")
+mainClipCorner.CornerRadius = UDim.new(0, 8)
+mainClipCorner.Parent = mainClipFrame
 
 local mainStroke = Instance.new("UIStroke")
 mainStroke.Color = C_STROKE
 mainStroke.Thickness = 1
 mainStroke.Parent = mainFrame
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
-mainCorner.Parent = mainFrame
 
 -- [[ HEADER SECTION ]] --
 local headerFrame = Instance.new("Frame")
@@ -293,7 +288,7 @@ headerPatch.ZIndex = 10
 headerPatch.Parent = headerFrame
 
 -- ============================================================================
--- [[ AGGRESSIVE FATALITY GLITCH LOGIC ]]
+-- [[ FATALITY GLITCH LOGIC ]]
 -- ============================================================================
 
 local title = Instance.new("TextLabel")
@@ -302,7 +297,7 @@ title.Size = UDim2.new(0, 200, 1, 0)
 title.Position = UDim2.new(0, 20, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "ANONBOUND"
-title.TextColor3 = C_TEXT -- Белый
+title.TextColor3 = C_TEXT 
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -468,7 +463,7 @@ CreateFuncButton("Troll", function()
     SendNotification("Anonbound", "Trolling is in development", 3)
 end)
 
--- [[ THEME DROPDOWN LOGIC ]] --
+-- [[ THEME DROPDOWN ]] --
 local function CreateThemeDropdown()
     local DropdownContainer = Instance.new("Frame")
     DropdownContainer.Name = "ThemeDropdown"
@@ -599,53 +594,233 @@ end
 
 CreateThemeDropdown()
 
--- [[ USER PROFILE ]] --
-local profileContainer = Instance.new("Frame")
-profileContainer.Name = "UserProfile"
-profileContainer.Size = UDim2.new(0, 155, 0, 36)
-profileContainer.AnchorPoint = Vector2.new(1, 0.5) 
-profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
-profileContainer.BackgroundColor3 = C_BG 
-profileContainer.BorderSizePixel = 0
-profileContainer.ZIndex = 12 
-profileContainer.Parent = headerFrame
+-- ============================================================================
+-- [[ USER PROFILE (FIXED & FULLY WORKING) ]]
+-- ============================================================================
 
-local profileCorner = Instance.new("UICorner")
-profileCorner.CornerRadius = UDim.new(0, 6) 
-profileCorner.Parent = profileContainer
+local function CreateProfileSection()
+    local profileContainer = Instance.new("TextButton") 
+    profileContainer.Name = "UserProfile"
+    profileContainer.Size = UDim2.new(0, 155, 0, 36)
+    profileContainer.AnchorPoint = Vector2.new(1, 0.5) 
+    profileContainer.Position = UDim2.new(1, -15, 0.5, 0) 
+    profileContainer.BackgroundColor3 = C_BG 
+    profileContainer.BorderSizePixel = 0
+    profileContainer.Text = ""
+    profileContainer.AutoButtonColor = false
+    profileContainer.ClipsDescendants = true 
+    profileContainer.ZIndex = 30 
+    profileContainer.Parent = headerFrame
 
-local profileStroke = Instance.new("UIStroke")
-profileStroke.Color = C_STROKE 
-profileStroke.Thickness = 1
-profileStroke.Parent = profileContainer
+    local profileCorner = Instance.new("UICorner")
+    profileCorner.CornerRadius = UDim.new(0, 6) 
+    profileCorner.Parent = profileContainer
 
-local avatarImage = Instance.new("ImageLabel")
-avatarImage.Name = "Avatar"
-avatarImage.Size = UDim2.new(0, 28, 0, 28)
-avatarImage.Position = UDim2.new(0, 4, 0.5, 0) 
-avatarImage.AnchorPoint = Vector2.new(0, 0.5)
-avatarImage.BackgroundColor3 = C_CARD_BG
-avatarImage.BackgroundTransparency = 1
-avatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=150&h=150"
-avatarImage.ZIndex = 13 
-avatarImage.Parent = profileContainer
+    local profileStroke = Instance.new("UIStroke")
+    profileStroke.Name = "ProfileStroke"
+    profileStroke.Color = C_STROKE 
+    profileStroke.Thickness = 1.2
+    profileStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border 
+    profileStroke.Parent = profileContainer
 
-local avatarCorner = Instance.new("UICorner")
-avatarCorner.CornerRadius = UDim.new(1, 0)
-avatarCorner.Parent = avatarImage
+    local HeaderArea = Instance.new("Frame")
+    HeaderArea.Name = "HeaderArea"
+    HeaderArea.BackgroundTransparency = 1
+    HeaderArea.Size = UDim2.new(1, 0, 0, 36)
+    HeaderArea.Parent = profileContainer
 
-local nameLabel = Instance.new("TextLabel")
-nameLabel.Name = "Username"
-nameLabel.Size = UDim2.new(1, -40, 1, 0)
-nameLabel.Position = UDim2.new(0, 38, 0, 0)
-nameLabel.BackgroundTransparency = 1
-nameLabel.Text = player.Name 
-nameLabel.TextColor3 = C_TEXT
-nameLabel.Font = Enum.Font.GothamMedium
-nameLabel.TextSize = 13
-nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-nameLabel.ZIndex = 13 
-nameLabel.Parent = profileContainer
+    local avatarImage = Instance.new("ImageLabel")
+    avatarImage.Name = "Avatar"
+    avatarImage.Size = UDim2.new(0, 28, 0, 28)
+    avatarImage.Position = UDim2.new(0, 4, 0.5, 0) 
+    avatarImage.AnchorPoint = Vector2.new(0, 0.5)
+    avatarImage.BackgroundColor3 = C_CARD_BG
+    avatarImage.BackgroundTransparency = 1
+    avatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=150&h=150"
+    avatarImage.ZIndex = 31 
+    avatarImage.Parent = HeaderArea
+
+    local avatarCorner = Instance.new("UICorner")
+    avatarCorner.CornerRadius = UDim.new(1, 0)
+    avatarCorner.Parent = avatarImage
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "Username"
+    nameLabel.Size = UDim2.new(1, -40, 1, 0)
+    nameLabel.Position = UDim2.new(0, 38, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name 
+    nameLabel.TextColor3 = C_TEXT
+    nameLabel.Font = Enum.Font.GothamMedium
+    nameLabel.TextSize = 13
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.ZIndex = 31 
+    nameLabel.Parent = HeaderArea
+
+    local StatsArea = Instance.new("Frame")
+    StatsArea.Name = "StatsArea"
+    StatsArea.BackgroundTransparency = 1
+    StatsArea.Position = UDim2.new(0, 0, 0, 36)
+    StatsArea.Size = UDim2.new(1, 0, 0, 64) 
+    StatsArea.Parent = profileContainer
+
+    local SepLine = Instance.new("Frame")
+    SepLine.BackgroundColor3 = C_STROKE
+    SepLine.Size = UDim2.new(1, -20, 0, 1)
+    SepLine.Position = UDim2.new(0.5, 0, 0, 2)
+    SepLine.AnchorPoint = Vector2.new(0.5, 0)
+    SepLine.BorderSizePixel = 0
+    SepLine.BackgroundTransparency = 1 
+    SepLine.Parent = StatsArea
+
+    local function CreateStatRow(id, label, value, yPos)
+        local Row = Instance.new("Frame")
+        Row.BackgroundTransparency = 1
+        Row.Size = UDim2.new(1, -20, 0, 20)
+        Row.Position = UDim2.new(0, 10, 0, yPos)
+        Row.Parent = StatsArea
+
+        local Lbl = Instance.new("TextLabel")
+        Lbl.BackgroundTransparency = 1
+        Lbl.Text = label
+        Lbl.TextColor3 = C_TEXT_DIM
+        Lbl.Font = Enum.Font.Gotham
+        Lbl.TextSize = 11
+        Lbl.Size = UDim2.new(0.5, 0, 1, 0)
+        Lbl.TextXAlignment = Enum.TextXAlignment.Left
+        Lbl.ZIndex = 32
+        Lbl.Parent = Row
+
+        local Val = Instance.new("TextLabel")
+        Val.Name = "Value"
+        Val.BackgroundTransparency = 1
+        Val.Text = value
+        Val.TextColor3 = C_TEXT
+        Val.Font = Enum.Font.GothamBold
+        Val.TextSize = 11
+        Val.Size = UDim2.new(0.5, 0, 1, 0)
+        Val.Position = UDim2.new(0.5, 0, 0, 0)
+        Val.TextXAlignment = Enum.TextXAlignment.Right
+        Val.ZIndex = 32
+        Val.Parent = Row
+        return Val
+    end
+
+    CreateStatRow("UserID", "ID:", tostring(player.UserId), 10)
+    CreateStatRow("Age", "Age:", tostring(player.AccountAge).." days", 32)
+
+    local ModelArea = Instance.new("Frame")
+    ModelArea.Name = "ModelArea"
+    ModelArea.BackgroundTransparency = 1
+    ModelArea.Position = UDim2.new(0, 0, 0, 90)
+    ModelArea.Size = UDim2.new(1, 0, 0, 260) 
+    ModelArea.Parent = profileContainer
+    
+    local SepLine2 = Instance.new("Frame")
+    SepLine2.BackgroundColor3 = C_STROKE
+    SepLine2.Size = UDim2.new(1, -20, 0, 1)
+    SepLine2.Position = UDim2.new(0.5, 0, 0, 0)
+    SepLine2.AnchorPoint = Vector2.new(0.5, 0)
+    SepLine2.BorderSizePixel = 0
+    SepLine2.BackgroundTransparency = 1 
+    SepLine2.Parent = ModelArea
+
+    local Viewport = Instance.new("ViewportFrame")
+    Viewport.Size = UDim2.new(1, 0, 1, -10)
+    Viewport.Position = UDim2.new(0, 0, 0, 5)
+    Viewport.BackgroundTransparency = 1
+    Viewport.Parent = ModelArea
+    Viewport.Ambient = Color3.fromRGB(150, 150, 150)
+    Viewport.LightColor = Color3.fromRGB(255, 255, 255)
+    Viewport.LightDirection = Vector3.new(1, 1, 1)
+
+    local WorldModel = Instance.new("WorldModel")
+    WorldModel.Parent = Viewport
+
+    local vLight = Instance.new("PointLight")
+    vLight.Brightness = 2
+    vLight.Range = 20
+    vLight.Parent = WorldModel
+    vLight.Position = Vector3.new(0, 5, -5)
+
+    local vCamera = Instance.new("Camera")
+    vCamera.Parent = Viewport
+    Viewport.CurrentCamera = vCamera
+
+    local function UpdateCharacterModel()
+        for _, c in pairs(WorldModel:GetChildren()) do 
+            if c:IsA("Model") then c:Destroy() end 
+        end
+
+        local char = player.Character
+        if not char then return end
+        
+        char.Archivable = true
+        local clone = char:Clone()
+        if not clone then return end
+        
+        clone.Parent = WorldModel
+        
+        for _, part in pairs(clone:GetDescendants()) do
+            if part:IsA("Script") or part:IsA("LocalScript") or part:IsA("Sound") then
+                part:Destroy()
+            end
+            if part:IsA("BasePart") then
+                part.Anchored = true
+                part.CanCollide = false
+            end
+        end
+
+        clone:PivotTo(CFrame.new(Vector3.new(0,0,0)))
+        vCamera.CFrame = CFrame.lookAt(Vector3.new(0, 1.5, -4.5), Vector3.new(0, 0.5, 0))
+    end
+
+    local isHovered = false
+    local isLockedOpen = false 
+
+    local function AnimateState()
+        local targetSize, strokeColor, sepAlpha
+        
+        if isLockedOpen then
+            targetSize = UDim2.new(0, 155, 0, 350)
+            strokeColor = C_ACCENT
+            sepAlpha = 0
+            UpdateCharacterModel()
+        elseif isHovered then
+            targetSize = UDim2.new(0, 155, 0, 100)
+            strokeColor = C_ACCENT
+            sepAlpha = 0
+        else
+            targetSize = UDim2.new(0, 155, 0, 36)
+            strokeColor = C_STROKE
+            sepAlpha = 1
+        end
+
+        TweenService:Create(profileContainer, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize}):Play()
+        TweenService:Create(profileStroke, TweenInfo.new(0.3), {Color = strokeColor}):Play()
+        TweenService:Create(SepLine, TweenInfo.new(0.3), {BackgroundTransparency = sepAlpha}):Play()
+        
+        local sep2Alpha = isLockedOpen and 0 or 1
+        TweenService:Create(SepLine2, TweenInfo.new(0.3), {BackgroundTransparency = sep2Alpha}):Play()
+    end
+
+    profileContainer.MouseEnter:Connect(function()
+        isHovered = true
+        AnimateState()
+    end)
+
+    profileContainer.MouseLeave:Connect(function()
+        isHovered = false
+        AnimateState()
+    end)
+    
+    profileContainer.MouseButton1Click:Connect(function()
+        isLockedOpen = not isLockedOpen 
+        AnimateState()
+    end)
+end
+
+CreateProfileSection()
 
 -- [[ LINES (Separators) ]] --
 local line2 = Instance.new("Frame") 
@@ -653,21 +828,24 @@ line2.Size = UDim2.new(1, 0, 0, 1)
 line2.Position = UDim2.new(0, 0, 0, 60)
 line2.BackgroundColor3 = C_STROKE
 line2.BorderSizePixel = 0
-line2.Parent = mainFrame
+line2.ZIndex = 5
+line2.Parent = mainClipFrame 
 
 local line = Instance.new("Frame") 
 line.Size = UDim2.new(0, 1, 1, -60)
 line.Position = UDim2.new(0, 300, 0, 60)
 line.BackgroundColor3 = C_STROKE
 line.BorderSizePixel = 0
-line.Parent = mainFrame
+line.ZIndex = 5
+line.Parent = mainClipFrame
 
 local line3 = Instance.new("Frame") 
 line3.Size = UDim2.new(0, 1, 1, -60)
 line3.Position = UDim2.new(0, 600, 0, 60)
 line3.BackgroundColor3 = C_STROKE
 line3.BorderSizePixel = 0
-line3.Parent = mainFrame
+line3.ZIndex = 5
+line3.Parent = mainClipFrame
 
 -- ============================================================================
 -- [[ HELPER: CONTENT BLOCK CREATOR ]]
@@ -763,7 +941,7 @@ local function CreateContentBlock(parent, name, position, size, title)
 end
 
 -- ============================================================================
--- [[ HELPER: ROUNDED TOGGLE FUNCTION (UPDATED) ]]
+-- [[ HELPER: ROUNDED TOGGLE FUNCTION ]]
 -- ============================================================================
 local function CreateFunctionToggle(parent, name, description, callback) 
     local ToggleBtn = Instance.new("TextButton")
@@ -843,12 +1021,12 @@ local function CreateFunctionToggle(parent, name, description, callback)
 end
 
 -- ============================================================================
--- [[ GENERATE BLOCKS (GUI LAYOUT) ]]
+-- [[ GENERATE BLOCKS (GUI LAYOUT) - MOVED HERE ]]
 -- ============================================================================
-
-local VisualsBlock, VisualsContent = CreateContentBlock(mainFrame, "LeftContainer", UDim2.new(0, 15, 0, 75), UDim2.new(0, 270, 1, -90), "Visuals")
-local MovementBlock, MovementContent = CreateContentBlock(mainFrame, "MiddleContainer", UDim2.new(0, 315, 0, 75), UDim2.new(0, 270, 1, -90), "Movement")
-local FeaturesBlock, FeaturesContent = CreateContentBlock(mainFrame, "RightContainer", UDim2.new(0, 615, 0, 75), UDim2.new(0, 270, 1, -90), "Features")
+-- ВАЖНО: Мы создаем блоки ДО того, как будем добавлять в них кнопки
+local VisualsBlock, VisualsContent = CreateContentBlock(mainClipFrame, "LeftContainer", UDim2.new(0, 15, 0, 75), UDim2.new(0, 270, 1, -90), "Visuals")
+local MovementBlock, MovementContent = CreateContentBlock(mainClipFrame, "MiddleContainer", UDim2.new(0, 315, 0, 75), UDim2.new(0, 270, 1, -90), "Movement")
+local FeaturesBlock, FeaturesContent = CreateContentBlock(mainClipFrame, "RightContainer", UDim2.new(0, 615, 0, 75), UDim2.new(0, 270, 1, -90), "Features")
 
 
 --[[ SMOOTH DRAG SYSTEM ]]
@@ -884,7 +1062,7 @@ UIS.InputChanged:Connect(function(input)
 end)
 
 
---[[ SYSTEM: ANIMATION & DESTRUCT (NO CURSOR LOCK) ]]
+--[[ SYSTEM: ANIMATION & DESTRUCT ]]
 local isMenuOpen = false
 local isAnimating = false
 
@@ -951,11 +1129,9 @@ SendNotification("Anonbound", "Toggle GUI - Home, Uninject - insert", 30)
 local function PlayIntroMusic()
     local sound = Instance.new("Sound")
     sound.Name = "WakeIntroMusic"
-    -- Ниже в кавычках вставь ID своей музыки.
-    -- Сейчас стоит пример (Phonk/Dark стиль, который подходит под тему):
     sound.SoundId = "rbxassetid://111174530730534" 
-    sound.Volume = 5.5 -- Громкость (от 0 до 10)
-    sound.Looped = false -- false = играть 1 раз, true = бесконечно
+    sound.Volume = 5.5 
+    sound.Looped = false 
     sound.Parent = game:GetService("SoundService")
     
     if not sound.IsLoaded then
@@ -964,7 +1140,6 @@ local function PlayIntroMusic()
     
     sound:Play()
     
-    -- Очистка после завершения трека
     sound.Ended:Connect(function()
         sound:Destroy()
     end)
@@ -977,7 +1152,6 @@ task.spawn(PlayIntroMusic)
 -- [[ GITHUB LOADER & LOGIC ]]
 -- ============================================================================
 
--- 1. Helper to fetch raw code (DOES NOT RUN IMMEDIATELY)
 local function GetRawCode(url)
     if url == "" then return nil end
     local success, result = pcall(function()
@@ -1007,32 +1181,24 @@ local NightMode_Code = GetRawCode(LINKS.NightMode)
 local NightSkyBox_Code = GetRawCode(LINKS.NightSkyBox)
 local InvisibleModel_Code = GetRawCode(LINKS.InvisibleModel)
 
--- 4. LOGIC ENGINE
 local ActiveCleanups = {}
 
 local function RunScript(code, isActive, featureName)
-    -- TURN OFF
     if not isActive then
         if ActiveCleanups[featureName] then
-            -- Run the custom cleanup function returned by the script
             pcall(ActiveCleanups[featureName])
             ActiveCleanups[featureName] = nil
         else
-            -- Fallback: Try to find a GUI with a matching name if no cleanup was provided
             local checkGui = game.CoreGui:FindFirstChild(featureName) or game.CoreGui:FindFirstChild(featureName.."_Holder")
             if checkGui then checkGui:Destroy() end
         end
         return
     end
 
-    -- TURN ON
     if code then
         local func, err = loadstring(code)
         if func then
-            -- Execute the script
             local cleanupAction = func()
-            
-            -- If the script returns a function, store it for later cleanup
             if type(cleanupAction) == "function" then
                 ActiveCleanups[featureName] = cleanupAction
             end
@@ -1041,7 +1207,6 @@ local function RunScript(code, isActive, featureName)
         end
     end
 end
-
 
 -- 5. CREATE BUTTONS
 
@@ -1061,12 +1226,7 @@ CreateFunctionToggle(VisualsContent, "InvisibleModel", "Makes models semi-invisi
     RunScript(InvisibleModel_Code, state, "IM_Feature") 
 end)
 
--- [MOVEMENT TAB]
---CreateFunctionToggle(MovementContent, "Test Function in movement!", "Just a test", function(state)
---     RunScript(Speed_Code1, state, "SpeedHack")
---end)
-
 -- [FEATURES TAB]
 CreateFunctionToggle(FeaturesContent, "Anti AFK", "Prevents getting kicked for inactivity", function(state)
-    RunScript(AntiAFK_Code, state, "AntiAFK") -- Исправлено: Clicker_Code -> AntiAFK_Code
+    RunScript(AntiAFK_Code, state, "AntiAFK") 
 end)
